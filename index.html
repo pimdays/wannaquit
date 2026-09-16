@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f5f7f9" />
   <title>Flight Setup</title>
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=8" />
 </head>
 <body>
   <main class="app-shell">
@@ -28,8 +28,17 @@
         </label>
 
         <label class="field field-date">
-          <span>Departure date</span>
-          <input id="departureDate" type="date" required />
+          <span>Departure date (DD/MM/YYYY)</span>
+          <input
+            id="departureDate"
+            class="date-ddmmyyyy"
+            type="text"
+            inputmode="numeric"
+            maxlength="10"
+            placeholder="16/09/2026"
+            autocomplete="off"
+            required
+          />
         </label>
 
         <label class="field field-departure-time">
@@ -219,6 +228,6 @@
   </dialog>
 
   <script src="app-data.js?v=6"></script>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

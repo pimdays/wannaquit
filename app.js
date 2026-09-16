@@ -186,13 +186,43 @@
     });
   });
 
+  function formatDateInput(date) {
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = date.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+
+  function normalizeSavedDate(value) {
+    const text = String(value || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+      const [y, m, d] = text.split('-');
+      return `${d}/${m}/${y}`;
+    }
+    return text;
+  }
+
+  function parseDateInput(value) {
+    const match = String(value || '').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+
+    const date = new Date(year, month - 1, day);
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) return null;
+
+    return { year, month, day };
+  }
+
   function setDefaultDate() {
     if ($('departureDate').value) return;
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    $('departureDate').value = `${y}-${m}-${d}`;
+    $('departureDate').value = formatDateInput(new Date());
   }
 
   function normalize24h(value) {
@@ -212,10 +242,19 @@
   }
 
   function parseLocalDate(dateValue, timeValue) {
-    const [year, month, day] = dateValue.split('-').map(Number);
+    const dateParts = parseDateInput(dateValue);
     const time = parse24hTime(timeValue);
-    if (!time) return null;
-    return new Date(year, month - 1, day + time.dayOffset, time.hour, time.minute, 0, 0);
+    if (!dateParts || !time) return null;
+
+    return new Date(
+      dateParts.year,
+      dateParts.month - 1,
+      dateParts.day + time.dayOffset,
+      time.hour,
+      time.minute,
+      0,
+      0
+    );
   }
 
   function formatTimeOnly(date) {
@@ -395,7 +434,7 @@
         if (restored) aircraftSelect.value = restored;
       }
       if (/^[1-8]$/.test(saved.crewPosition || '')) crewPosition.value = saved.crewPosition;
-      if (saved.departureDate) $('departureDate').value = saved.departureDate;
+      if (saved.departureDate) $('departureDate').value = normalizeSavedDate(saved.departureDate);
       if (saved.departureTime) $('departureTime').value = saved.departureTime;
       if (saved.arrivalTime) $('arrivalTime').value = saved.arrivalTime;
       if (saved.blockHours !== undefined) $('blockHours').value = saved.blockHours;
@@ -426,7 +465,7 @@
     const departure = parseLocalDate($('departureDate').value, $('departureTime').value);
     const arrival = parseLocalDate($('departureDate').value, $('arrivalTime').value);
     if (!departure || !arrival) {
-      alert('Enter departure and arrival times in 24-hour HHMM format, for example 0030 or 1745.');
+      alert('Check the departure date (DD/MM/YYYY) and enter departure/arrival times in 24-hour HHMM format, for example 0030 or 1745.');
       return;
     }
 
@@ -464,6 +503,26 @@
     resultSection.classList.remove('hidden');
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  $('departureDate').addEventListener('input', (event) => {
+    const digits = event.target.value.replace(/\D/g, '').slice(0, 8);
+    let formatted = digits;
+
+    if (digits.length > 4) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    } else if (digits.length > 2) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+
+    event.target.value = formatted;
+    event.target.setCustomValidity('');
+  });
+
+  $('departureDate').addEventListener('blur', (event) => {
+    if (!event.target.value) return;
+    const valid = parseDateInput(event.target.value);
+    event.target.setCustomValidity(valid ? '' : 'Enter the date as DD/MM/YYYY, for example 16/09/2026.');
+  });
 
   $('flightNumber').addEventListener('input', (event) => {
     event.target.value = event.target.value.replace(/\D/g, '');

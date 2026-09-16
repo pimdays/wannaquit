@@ -726,3 +726,15 @@ input[type=number] { appearance: textfield; -moz-appearance: textfield; }
   .equipment-diagram-stage img { max-height: 700px; }
   .equipment-diagram-dialog { display: none !important; }
 }
+
+
+/* v8: iPad-safe departure date field.
+   Avoids Safari/iPadOS native date UI and Buddhist-era display. */
+.date-ddmmyyyy {
+  min-width: 0;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .02em;
+  -webkit-appearance: none;
+  appearance: none;
+}
