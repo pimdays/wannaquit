@@ -25,12 +25,6 @@
     });
   });
 
-  function populateAircrafts() {
-    aircraftSelect.innerHTML = registrationIndex.map((entry, i) =>
-      `<option value="${i}">${escapeHtml(entry.registration)} · ${escapeHtml(entry.label)}</option>`
-    ).join('');
-  }
-
 
   function setDefaultDate() {
     if ($('departureDate').value) return;
@@ -84,9 +78,9 @@
   }
 
   function getSelectedAircraft() {
-    const index = Number(aircraftSelect.value);
-    const entry = registrationIndex[Number.isInteger(index) && registrationIndex[index] ? index : 0];
-    if (!entry) throw new Error('No aircraft registrations are available.');
+    const selectedRegistration = aircraftSelect.value;
+    const entry = registrationIndex.find((item) => item.registration === selectedRegistration);
+    if (!entry) throw new Error(`No aircraft data found for ${selectedRegistration || 'the selected aircraft'}.`);
     return { entry, aircraft: APP.drill.aircraft[entry.aircraftIndex] };
   }
 
@@ -153,7 +147,13 @@
     try {
       const saved = JSON.parse(localStorage.getItem('cabinDrillFormV2') || '{}');
       if (saved.flightNumber) $('flightNumber').value = saved.flightNumber;
-      if (saved.aircraftSelect !== undefined && registrationIndex[Number(saved.aircraftSelect)]) aircraftSelect.value = saved.aircraftSelect;
+      if (saved.aircraftSelect !== undefined) {
+        const savedValue = String(saved.aircraftSelect);
+        const byRegistration = registrationIndex.find((item) => item.registration === savedValue);
+        const byOldIndex = /^\d+$/.test(savedValue) ? registrationIndex[Number(savedValue)] : null;
+        const restored = byRegistration?.registration || byOldIndex?.registration;
+        if (restored) aircraftSelect.value = restored;
+      }
       if (/^[1-8]$/.test(saved.crewPosition || '')) crewPosition.value = saved.crewPosition;
       if (saved.departureDate) $('departureDate').value = saved.departureDate;
       if (saved.departureTime) $('departureTime').value = saved.departureTime;
@@ -250,7 +250,7 @@
   $('resetBtn').addEventListener('click', () => {
     localStorage.removeItem('cabinDrillFormV2');
     form.reset();
-    aircraftSelect.value = '0';
+    aircraftSelect.value = registrationIndex[0]?.registration || 'HS-XTC';
     crewPosition.value = '2';
     setDefaultDate();
     resultSection.classList.add('hidden');
@@ -262,7 +262,7 @@
     if (event.target === seatmapDialog) seatmapDialog.close();
   });
 
-  populateAircrafts();
+  if (!aircraftSelect.value) aircraftSelect.value = registrationIndex[0]?.registration || 'HS-XTC';
   if (!crewPosition.value) crewPosition.value = '2';
   setDefaultDate();
   restoreForm();

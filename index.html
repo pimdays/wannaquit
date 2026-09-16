@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f5f7f9" />
   <title>Flight Setup</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body>
   <main class="app-shell">
@@ -42,7 +42,18 @@
 
         <label class="field field-aircraft">
           <span>Aircraft</span>
-          <select id="aircraftSelect" required></select>
+          <select id="aircraftSelect" required>
+            <option value="HS-XTC">HS-XTC · A330 Standard 12-365</option>
+            <option value="HS-XTE">HS-XTE · A330 Standard 12-365</option>
+            <option value="HS-XTH">HS-XTH · A330 All EY Type I-A</option>
+            <option value="HS-XTI">HS-XTI · A330 All EY Type I-A (XTI)</option>
+            <option value="HS-XTN">HS-XTN · A330 Standard 363</option>
+            <option value="HS-XTO">HS-XTO · A330 Complex Type I</option>
+            <option value="HS-XTQ">HS-XTQ · A330 Complex Type I</option>
+            <option value="HS-XTP">HS-XTP · A330 All EY Type II</option>
+            <option value="HS-XTR">HS-XTR · A330 All EY Type I-B</option>
+            <option value="HS-XTS">HS-XTS · A330 All EY Type I-B</option>
+          </select>
         </label>
         <label class="field field-position">
           <span>Crew position</span>
@@ -180,7 +191,7 @@
     <img id="seatmapDialogImage" alt="Aircraft seat configuration enlarged" />
   </dialog>
 
-  <script src="app-data.js"></script>
-  <script src="app.js"></script>
+  <script src="app-data.js?v=4"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
