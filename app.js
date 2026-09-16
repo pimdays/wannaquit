@@ -10,6 +10,169 @@
   const aircraftSelect = $('aircraftSelect');
   const crewPosition = $('crewPosition');
   const resultSection = $('resultSection');
+  const equipmentDiagramDialog = $('equipmentDiagramDialog');
+
+  const TARGET_EQUIPMENT = ['AED', 'EMK', 'MFAK', 'ISB', 'ESB'];
+
+  // Exact locations transcribed from diagram.pdf (Cabin Crew Manual Part I, Appendix D).
+  const DIAGRAM_DATA = {
+    'HS-XTC': 'standard-12-365',
+    'HS-XTE': 'standard-12-365',
+    'HS-XTH': 'all-ey-type-ia',
+    'HS-XTI': 'all-ey-type-ia-xti',
+    'HS-XTN': 'standard-363',
+    'HS-XTO': 'complex-type-i',
+    'HS-XTQ': 'complex-type-i',
+    'HS-XTP': 'all-ey-type-ii'
+  };
+
+  const EQUIPMENT_REFERENCE = {
+    'standard-12-365': {
+      title: 'Standard 12-365',
+      image: 'diagram-standard-12-365.webp',
+      source: 'Appendix D5-1 · Standard 12-365',
+      equipment: {
+        AED: [{ location: 'STOWAGE COMPARTMENT NEXT TO DOOR 1L', quantity: 1 }],
+        EMK: [{ location: 'OHB 14G', quantity: 1 }],
+        MFAK: [
+          { location: 'FLIGHT DECK', quantity: 1 },
+          { location: 'STOWAGE COMPARTMENT NEXT TO DOOR 1L', quantity: 1 },
+          { location: 'STOWAGE BEHIND 33HJK', quantity: 1 },
+          { location: 'OHB ROW 35 ABC', quantity: 1 },
+          { location: 'OHB 51G', quantity: 1 }
+        ],
+        ISB: [
+          { location: 'STOWAGE BEHIND 33ABC', quantity: 8 },
+          { location: 'STOWAGE BEHIND 33HJK', quantity: 8 }
+        ],
+        ESB: [
+          { location: 'STOWAGE BEHIND 33ABC', quantity: 5 },
+          { location: 'STOWAGE BEHIND 33HJK', quantity: 5 }
+        ]
+      }
+    },
+    'all-ey-type-ia': {
+      title: 'All EY Type I-A',
+      image: 'diagram-all-ey-type-ia.webp',
+      source: 'Appendix D5-2 · All EY Type I-A',
+      equipment: {
+        AED: [{ location: 'STOWAGE COMPARTMENT NEXT TO D1L', quantity: 1 }],
+        EMK: [{ location: 'OHB ROW 12G', quantity: 1 }],
+        MFAK: [
+          { location: 'FLIGHT DECK', quantity: 1 },
+          { location: 'STOWAGE COMPARTMENT NEXT TO D1L', quantity: 1 },
+          { location: 'STOWAGE BEHIND 29HK', quantity: 1 },
+          { location: 'OHB ROW 30ABC', quantity: 1 },
+          { location: 'OHB BEHIND ROW 44G', quantity: 1 }
+        ],
+        ISB: [
+          { location: 'STOWAGE BEHIND 29AC', quantity: 8 },
+          { location: 'STOWAGE BEHIND 29HK', quantity: 8 }
+        ],
+        ESB: [
+          { location: 'STOWAGE BEHIND 29AC', quantity: 5 },
+          { location: 'STOWAGE BEHIND 29HK', quantity: 5 }
+        ]
+      }
+    },
+    'all-ey-type-ia-xti': {
+      title: 'All EY Type I-A (XTI)',
+      image: 'diagram-all-ey-type-ia-xti.webp',
+      source: 'Appendix D5-3 · All EY Type I-A (XTI)',
+      equipment: {
+        AED: [{ location: 'STOWAGE COMPARTMENT NEXT TO D1L', quantity: 1 }],
+        EMK: [{ location: 'OHB BEHIND ROW 12G', quantity: 1 }],
+        MFAK: [
+          { location: 'FLIGHT DECK', quantity: 1 },
+          { location: 'STOWAGE COMPARTMENT NEXT TO D1L', quantity: 1 },
+          { location: 'STOWAGE BEHIND 29HK', quantity: 1 },
+          { location: 'OHB BEFORE ROW 30ABC', quantity: 1 },
+          { location: 'OHB BEHIND ROW 44G', quantity: 1 }
+        ],
+        ISB: [
+          { location: 'STOWAGE BEHIND 29AC', quantity: 8 },
+          { location: 'STOWAGE BEHIND 29HK', quantity: 8 }
+        ],
+        ESB: [
+          { location: 'STOWAGE BEHIND 29AC', quantity: 5 },
+          { location: 'STOWAGE BEHIND 29HK', quantity: 5 }
+        ]
+      }
+    },
+    'standard-363': {
+      title: 'Standard 363',
+      image: 'diagram-standard-363.webp',
+      source: 'Appendix D5-4 · Standard 363',
+      equipment: {
+        AED: [{ location: 'CLOSET CC 2', quantity: 1 }],
+        EMK: [
+          { location: 'OHSB ABOVE CC 3', quantity: 1 },
+          { location: 'ROW 35 ABC OHSC', quantity: 1 }
+        ],
+        MFAK: [
+          { location: 'FLIGHT DECK', quantity: 1 },
+          { location: 'CLOSET CC 2', quantity: 1 },
+          { location: 'DOGHOUSE BEFORE CLOSET CC 3', quantity: 1 },
+          { location: 'DOGHOUSE BEHIND 33H', quantity: 1 },
+          { location: 'ROW 35 HJK OHSC', quantity: 1 },
+          { location: 'ROW 51 AC OHSC', quantity: 1 }
+        ],
+        ISB: [{ location: 'CLOSET CC 3', quantity: 36 }],
+        ESB: [
+          { location: 'CLOSET CC 1', quantity: 4 },
+          { location: 'DOGHOUSE BEHIND 33H', quantity: 4 },
+          { location: 'ROW 51 AC OHSC', quantity: 10 },
+          { location: 'DOGHOUSE BEHIND 51C', quantity: 2 }
+        ]
+      }
+    },
+    'complex-type-i': {
+      title: 'Complex Type I',
+      image: 'diagram-complex-type-i.webp',
+      source: 'Appendix D5-5 · Complex Type I',
+      equipment: {
+        AED: [{ location: 'OHB ROW 31 HK', quantity: 1 }],
+        EMK: [{ location: 'OHB ROW 31 HK', quantity: 1 }],
+        MFAK: [
+          { location: 'FLIGHT DECK', quantity: 1 },
+          { location: 'OHB ROW 11 HK', quantity: 1 },
+          { location: 'OHB ROW 31 HK', quantity: 1 },
+          { location: 'OHB ROW 62 AC', quantity: 1 },
+          { location: 'OHB ROW 62 HK', quantity: 1 }
+        ],
+        ISB: [{ location: 'OHB ROW 48 HK', quantity: 16 }],
+        ESB: [{ location: 'OHB ROW 48 HK', quantity: 10 }]
+      }
+    },
+    'all-ey-type-ii': {
+      title: 'All EY Type II',
+      image: 'diagram-all-ey-type-ii.webp',
+      source: 'Appendix D5-6 · All EY Type II',
+      equipment: {
+        AED: [{ location: 'STOWAGE S04 & S05', quantity: 1 }],
+        EMK: [{ location: 'STOWAGE S04 & S05', quantity: 1 }],
+        MFAK: [
+          { location: 'DOGHOUSE D-1', quantity: 1 },
+          { location: 'OHB ROW 47 AB', quantity: 1 },
+          { location: 'OHB ROW 47 JK', quantity: 1 },
+          { location: 'OHB ROW 62 AB', quantity: 1 },
+          { location: 'OHB ROW 62 JK', quantity: 1 }
+        ],
+        ISB: [
+          { location: 'DOGHOUSE D-7', quantity: 10 },
+          { location: 'DOGHOUSE D-8', quantity: 10 }
+        ],
+        ESB: [
+          { location: 'OHB ROW 30 AB (SPARE KIT)', quantity: 2 },
+          { location: 'OHB ROW 30 JK (SPARE KIT)', quantity: 2 },
+          { location: 'OHB ROW 47 AB (SPARE KIT)', quantity: 2 },
+          { location: 'OHB ROW 47 JK (SPARE KIT)', quantity: 2 },
+          { location: 'OHB ROW 63 AB (SPARE KIT)', quantity: 2 },
+          { location: 'OHB ROW 63 JK (SPARE KIT)', quantity: 2 }
+        ]
+      }
+    }
+  };
 
   const registrationIndex = [];
   APP.drill.aircraft.forEach((aircraft, aircraftIndex) => {
@@ -92,6 +255,75 @@
           <div class="equipment-items">${items}</div>
         </section>`;
     }).join('');
+  }
+
+  function collectFallbackEquipmentLocations(aircraft) {
+    const result = Object.fromEntries(TARGET_EQUIPMENT.map((code) => [code, []]));
+    const locationMaps = Object.fromEntries(TARGET_EQUIPMENT.map((code) => [code, new Map()]));
+
+    Object.values(aircraft.positions || {}).forEach((positionData) => {
+      (positionData.equipmentChecklist || []).forEach((group) => {
+        (group.items || []).forEach((equipment) => {
+          if (!TARGET_EQUIPMENT.includes(equipment.code)) return;
+          const map = locationMaps[equipment.code];
+          map.set(group.location, (map.get(group.location) || 0) + Number(equipment.quantity || 0));
+        });
+      });
+    });
+
+    TARGET_EQUIPMENT.forEach((code) => {
+      result[code] = [...locationMaps[code].entries()].map(([location, quantity]) => ({ location, quantity }));
+    });
+    return result;
+  }
+
+  function renderKeyEquipment(aircraft, registration) {
+    const referenceKey = DIAGRAM_DATA[registration];
+    const reference = referenceKey ? EQUIPMENT_REFERENCE[referenceKey] : null;
+    const equipment = reference?.equipment || collectFallbackEquipmentLocations(aircraft);
+
+    $('keyEquipmentLocations').innerHTML = TARGET_EQUIPMENT.map((code) => {
+      const locations = equipment[code] || [];
+      const rows = locations.length
+        ? locations.map(({ location, quantity }) => `
+            <li>
+              <span>${escapeHtml(location)}</span>
+              <strong>×${escapeHtml(quantity)}</strong>
+            </li>`).join('')
+        : '<li class="no-location">Not shown in the available source.</li>';
+
+      return `
+        <article class="key-equipment-item">
+          <div class="key-equipment-code">${code}</div>
+          <ul>${rows}</ul>
+        </article>`;
+    }).join('');
+
+    $('equipmentLocationSource').textContent = reference
+      ? `Source: ${reference.source}`
+      : 'Source: Emergency Drill Checklist data. The supplied diagram PDF does not include All EY Type I-B.';
+
+    const title = reference?.title || (aircraft.ui?.label || aircraft.name);
+    $('equipmentDiagramTitle').textContent = title;
+
+    if (reference?.image) {
+      $('equipmentDiagramImage').src = reference.image;
+      $('equipmentDiagramImage').alt = `${title} safety and emergency equipment location diagram`;
+      $('equipmentDiagramDialogImage').src = reference.image;
+      $('equipmentDiagramDialogImage').alt = `${title} safety and emergency equipment location diagram enlarged`;
+      $('equipmentDiagramStage').classList.remove('hidden');
+      $('equipmentDiagramUnavailable').classList.add('hidden');
+      $('enlargeEquipmentDiagram').classList.remove('hidden');
+      $('equipmentDiagramCaption').textContent = `Source: ${reference.source}`;
+    } else {
+      $('equipmentDiagramImage').removeAttribute('src');
+      $('equipmentDiagramDialogImage').removeAttribute('src');
+      $('equipmentDiagramStage').classList.add('hidden');
+      $('equipmentDiagramUnavailable').classList.remove('hidden');
+      $('equipmentDiagramUnavailable').textContent = 'No All EY Type I-B aircraft diagram is included in the supplied diagram.pdf.';
+      $('enlargeEquipmentDiagram').classList.add('hidden');
+      $('equipmentDiagramCaption').textContent = '';
+    }
   }
 
   function splitQnaTopic(topic) {
@@ -225,6 +457,7 @@
     $('cleaningZone').textContent = cleaningZone;
     renderList($('securityAreas'), positionData.securityCheckAreas || []);
     renderEquipment(positionData.equipmentChecklist || []);
+    renderKeyEquipment(aircraft, entry.registration);
 
     renderQna(qnaDay);
     saveForm();
@@ -262,6 +495,15 @@
     crewPosition.value = '2';
     setDefaultDate();
     resultSection.classList.add('hidden');
+    if (equipmentDiagramDialog?.open) equipmentDiagramDialog.close();
+  });
+
+  $('enlargeEquipmentDiagram').addEventListener('click', () => {
+    if ($('equipmentDiagramDialogImage').getAttribute('src')) equipmentDiagramDialog.showModal();
+  });
+  $('closeEquipmentDiagram').addEventListener('click', () => equipmentDiagramDialog.close());
+  equipmentDiagramDialog.addEventListener('click', (event) => {
+    if (event.target === equipmentDiagramDialog) equipmentDiagramDialog.close();
   });
 
   if (!aircraftSelect.value) aircraftSelect.value = registrationIndex[0]?.registration || 'HS-XTC';

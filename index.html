@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f5f7f9" />
   <title>Flight Setup</title>
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
 </head>
 <body>
   <main class="app-shell">
@@ -164,6 +164,36 @@
         </section>
       </div>
 
+      <section class="aircraft-reference-grid">
+        <section class="panel key-equipment-card">
+          <div class="card-heading">
+            <span class="card-icon">🧭</span>
+            <div>
+              <p>Selected aircraft</p>
+              <h3>Key equipment locations</h3>
+            </div>
+          </div>
+          <p class="reference-note">Locations for AED, EMK, MFAK, ISB and ESB across the selected aircraft.</p>
+          <div id="keyEquipmentLocations" class="key-equipment-grid"></div>
+          <p id="equipmentLocationSource" class="source-note"></p>
+        </section>
+
+        <section class="panel diagram-card">
+          <div class="diagram-card-header">
+            <div>
+              <p class="section-kicker">Aircraft diagram</p>
+              <h3 id="equipmentDiagramTitle"></h3>
+            </div>
+            <button id="enlargeEquipmentDiagram" class="icon-button" type="button" aria-label="Enlarge aircraft equipment diagram">↗</button>
+          </div>
+          <div id="equipmentDiagramStage" class="equipment-diagram-stage">
+            <img id="equipmentDiagramImage" alt="Aircraft safety and emergency equipment location diagram" />
+          </div>
+          <div id="equipmentDiagramUnavailable" class="diagram-unavailable hidden"></div>
+          <p id="equipmentDiagramCaption" class="source-note"></p>
+        </section>
+      </section>
+
       <section id="qnaSection" class="qna-section">
         <div class="qna-header qna-header-prominent">
           <div class="qna-heading-block">
@@ -185,7 +215,12 @@
     </section>
   </main>
 
-  <script src="app-data.js?v=5"></script>
-  <script src="app.js?v=5"></script>
+  <dialog id="equipmentDiagramDialog" class="equipment-diagram-dialog">
+    <button id="closeEquipmentDiagram" class="dialog-close" type="button" aria-label="Close">×</button>
+    <img id="equipmentDiagramDialogImage" alt="Aircraft safety and emergency equipment location diagram enlarged" />
+  </dialog>
+
+  <script src="app-data.js?v=6"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
