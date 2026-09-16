@@ -55,7 +55,7 @@
     },
 
     ALA: {
-      place: 'Almaty',
+      place: 'Kazahkstan',
       sections: [
         {
           label: 'Pax+Crew',
