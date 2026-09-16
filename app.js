@@ -14,6 +14,98 @@
 
   const TARGET_EQUIPMENT = ['AED', 'EMK', 'MFAK', 'ISB', 'ESB'];
 
+  const CIQ_DATA = {
+    NRT: {
+      place: 'Japan',
+      sections: [
+        {
+          label: 'Pax',
+          lines: [
+            'duty free <200,000 yen, cash 1M, Alc 3b <760ml',
+            '200 cig, 10 heated, 50 cigars, 250g tobacco',
+            '2 ounces perfume (60 ml)'
+          ]
+        },
+        {
+          label: 'Crew',
+          lines: [
+            'duty free 15,000 yen, no alcohol',
+            '50 cig, 15 cigars, 75g tobacco'
+          ]
+        }
+      ]
+    },
+    NGO: { alias: 'NRT' },
+    KIX: { alias: 'NRT' },
+    CTS: { alias: 'NRT' },
+    SDJ: { alias: 'NRT' },
+
+    DMK: {
+      place: 'Thailand',
+      sections: [
+        {
+          label: '',
+          lines: [
+            'duty free 20,000 THB, Alc 1 L',
+            '200 cig, 250g cigars/tobacco'
+          ]
+        }
+      ]
+    },
+
+    ALA: {
+      place: 'Almaty',
+      sections: [
+        {
+          label: 'Pax',
+          lines: [
+            'duty free goods ≤ EUR 10,000, <50 kg, Alc 3 L',
+            '200 cig, 50 cigars, 250g tobacco',
+            'perfume reasonable qty',
+            'foreign cash > USD 3,000 declare'
+          ]
+        }
+      ]
+    }
+  };
+
+  function getCiqData(code) {
+    const key = String(code || '').trim().toUpperCase();
+    const entry = CIQ_DATA[key];
+    if (!entry) return null;
+    return entry.alias ? CIQ_DATA[entry.alias] : entry;
+  }
+
+  function renderCiq(destination) {
+    const code = String(destination || '').trim().toUpperCase();
+    const data = getCiqData(code);
+
+    $('ciqAirportBadge').textContent = code || '—';
+
+    if (!data) {
+      $('ciqTitle').textContent = code ? `CIQ · ${code}` : 'CIQ';
+      $('ciqContent').innerHTML = `<p class="ciq-unavailable">No CIQ information saved for ${escapeHtml(code || 'this destination')}.</p>`;
+      return;
+    }
+
+    $('ciqTitle').textContent = `CIQ · ${data.place}`;
+
+    $('ciqContent').innerHTML = data.sections.map((section) => {
+      const heading = section.label
+        ? `<div class="ciq-section-label">${escapeHtml(section.label)}</div>`
+        : '';
+
+      return `
+        <section class="ciq-section">
+          ${heading}
+          <div class="ciq-lines">
+            ${section.lines.map((line) => `<div>${escapeHtml(line)}</div>`).join('')}
+          </div>
+        </section>`;
+    }).join('');
+  }
+
+
   // Exact locations transcribed from diagram.pdf (Cabin Crew Manual Part I, Appendix D).
   const DIAGRAM_DATA = {
     'HS-XTC': 'standard-12-365',
@@ -417,6 +509,8 @@
       departureTime: $('departureTime').value,
       arrivalTime: $('arrivalTime').value,
       blockHours: $('blockHours').value,
+      originAirport: $('originAirport').value,
+      destinationAirport: $('destinationAirport').value,
       pbm: $('pbm').value,
       salesTarget: $('salesTarget').value
     }));
@@ -438,6 +532,8 @@
       if (saved.departureTime) $('departureTime').value = saved.departureTime;
       if (saved.arrivalTime) $('arrivalTime').value = saved.arrivalTime;
       if (saved.blockHours !== undefined) $('blockHours').value = saved.blockHours;
+      if (saved.originAirport !== undefined) $('originAirport').value = String(saved.originAirport).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+      if (saved.destinationAirport !== undefined) $('destinationAirport').value = String(saved.destinationAirport).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
       if (saved.pbm !== undefined) $('pbm').value = saved.pbm;
       if (saved.salesTarget !== undefined) $('salesTarget').value = saved.salesTarget;
     } catch (_) {}
@@ -473,12 +569,15 @@
     if (arrival < departure) arrival.setDate(arrival.getDate() + 1);
     const qnaDay = reporting.getDate();
     const flightDigits = $('flightNumber').value.replace(/\D/g, '');
+    const origin = $('originAirport').value.trim().toUpperCase();
+    const destination = $('destinationAirport').value.trim().toUpperCase();
 
     $('resultPosition').textContent = position;
     $('resultAircraft').textContent = aircraft.ui?.label || aircraft.name;
     $('resultRegistration').textContent = entry.registration;
     $('flightNumberDisplay').textContent = `XJ${flightDigits}`;
     $('departureDateDisplay').textContent = formatDateOnly(departure);
+    $('routeDisplay').textContent = `${origin} → ${destination}`;
     $('departureDisplay').textContent = `${normalize24h($('departureTime').value)} H`;
     $('reportingDisplay').textContent = `${formatTimeOnly(reporting)} H · ${formatDateOnly(reporting)}`;
 
@@ -488,6 +587,7 @@
     $('qaDayDisplay').textContent = String(qnaDay).padStart(2, '0');
     $('pbmDisplay').textContent = $('pbm').value || '—';
     $('salesTargetDisplay').textContent = $('salesTarget').value || '—';
+    renderCiq(destination);
 
     $('assignedStationTitle').textContent = position;
     $('briefingStation').textContent = positionData.passengerSafetyBriefingStation || '—';
@@ -535,6 +635,15 @@
   ['departureTime', 'arrivalTime'].forEach((id) => {
     $(id).addEventListener('input', (event) => {
       event.target.value = event.target.value.replace(/\D/g, '').slice(0, 4);
+    });
+  });
+
+  ['originAirport', 'destinationAirport'].forEach((id) => {
+    $(id).addEventListener('input', (event) => {
+      event.target.value = event.target.value
+        .toUpperCase()
+        .replace(/[^A-Z]/g, '')
+        .slice(0, 3);
     });
   });
 

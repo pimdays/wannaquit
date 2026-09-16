@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f5f7f9" />
   <title>Flight Setup</title>
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="styles.css?v=9" />
 </head>
 <body>
   <main class="app-shell">
@@ -72,6 +72,16 @@
           </select>
         </label>
 
+        <label class="field field-origin">
+          <span>Point of origin</span>
+          <input id="originAirport" class="airport-code-input" type="text" maxlength="3" placeholder="DMK" autocomplete="off" required />
+        </label>
+
+        <label class="field field-destination">
+          <span>Destination</span>
+          <input id="destinationAirport" class="airport-code-input" type="text" maxlength="3" placeholder="NRT" autocomplete="off" required />
+        </label>
+
         <label class="field field-position">
           <span>Crew position</span>
           <div class="position-input-wrap">
@@ -107,6 +117,7 @@
           <span>Flight</span>
           <strong id="flightNumberDisplay"></strong>
           <small id="departureDateDisplay"></small>
+          <small id="routeDisplay" class="route-display"></small>
         </div>
 
         <div class="timing-card">
@@ -134,6 +145,17 @@
         <div><span>PBM</span><strong id="pbmDisplay">—</strong></div>
         <div><span>Sales target</span><strong id="salesTargetDisplay">—</strong></div>
       </div>
+
+      <section id="ciqCard" class="panel ciq-card">
+        <div class="ciq-header">
+          <div>
+            <p class="section-kicker">Destination CIQ</p>
+            <h2 id="ciqTitle">CIQ</h2>
+          </div>
+          <div id="ciqAirportBadge" class="ciq-airport-badge"></div>
+        </div>
+        <div id="ciqContent" class="ciq-content"></div>
+      </section>
 
       <div class="result-dashboard result-dashboard-two">
         <section class="panel details-card">
@@ -228,6 +250,6 @@
   </dialog>
 
   <script src="app-data.js?v=6"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

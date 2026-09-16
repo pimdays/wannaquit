@@ -738,3 +738,115 @@ input[type=number] { appearance: textfield; -moz-appearance: textfield; }
   -webkit-appearance: none;
   appearance: none;
 }
+
+
+/* v9: route inputs + destination CIQ */
+.field-origin { grid-column: 2; grid-row: 2; }
+.field-destination { grid-column: 3; grid-row: 2; }
+.field-position { grid-column: 4; grid-row: 2; }
+.field-pbm { grid-column: 5; grid-row: 2; }
+.field-sales { grid-column: 4; grid-row: 3; }
+.primary-button { grid-column: 5; grid-row: 3; }
+
+.airport-code-input {
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.route-display {
+  margin-top: 3px;
+  color: var(--blue-dark);
+  font-weight: 850;
+  letter-spacing: .04em;
+}
+
+.ciq-card {
+  margin: 14px 0;
+  padding: 16px 18px;
+}
+.ciq-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #edf0f3;
+}
+.ciq-header h2 {
+  margin: 2px 0 0;
+  font-size: 20px;
+}
+.ciq-airport-badge {
+  min-width: 66px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--blue-soft);
+  color: var(--blue-dark);
+  text-align: center;
+  font-weight: 950;
+  font-size: 18px;
+  letter-spacing: .05em;
+}
+.ciq-content {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.ciq-section {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.ciq-section-label {
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: #f1f4f7;
+  color: #34424f;
+  font-weight: 900;
+  font-size: 13px;
+}
+.ciq-lines {
+  display: grid;
+  gap: 5px;
+  padding: 7px 0;
+  color: #2f3a44;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.ciq-lines > div::before {
+  content: "•";
+  margin-right: 8px;
+  color: var(--blue);
+  font-weight: 900;
+}
+.ciq-unavailable {
+  margin: 0;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f7f9fb;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+@media (max-width: 1000px) {
+  .field-origin,
+  .field-destination,
+  .field-position,
+  .field-pbm,
+  .field-sales { grid-column: span 2; grid-row: auto; }
+  .primary-button { grid-column: 1 / -1; grid-row: auto; }
+}
+
+@media (max-width: 640px) {
+  .field-origin,
+  .field-destination,
+  .field-position,
+  .field-pbm,
+  .field-sales,
+  .primary-button { grid-column: 1; }
+  .ciq-section { grid-template-columns: 1fr; gap: 4px; }
+  .ciq-section-label { width: fit-content; }
+}
