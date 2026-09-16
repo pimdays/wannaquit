@@ -1,6 +1,9 @@
 (() => {
   const APP = window.CABIN_DRILL_DATA;
-  if (!APP) throw new Error('Cabin drill data not loaded.');
+  if (!APP) {
+    document.body.insertAdjacentHTML('afterbegin', '<div style="padding:12px;background:#fff0f0;color:#a22;font-weight:700">Data file could not be loaded. Make sure app-data.js is in the same folder as index.html.</div>');
+    throw new Error('Cabin drill data not loaded.');
+  }
 
   const $ = (id) => document.getElementById(id);
   const form = $('drillForm');
@@ -10,36 +13,42 @@
   const resultSection = $('resultSection');
   const seatmapDialog = $('seatmapDialog');
 
-  const state = {
-    position: 'P2'
-  };
-
+  const state = { position: 'P2' };
   const registrationIndex = [];
+
   APP.drill.aircraft.forEach((aircraft, aircraftIndex) => {
-    aircraft.ui.registrations.forEach((registration) => {
-      registrationIndex.push({ registration, aircraftIndex, label: aircraft.ui.label });
+    const registrations = aircraft.ui?.registrations || aircraft.registrations || [];
+    registrations.forEach((registration) => {
+      registrationIndex.push({
+        registration,
+        aircraftIndex,
+        label: aircraft.ui?.label || aircraft.name
+      });
     });
   });
 
   function populateAircrafts() {
     aircraftSelect.innerHTML = registrationIndex.map((entry, i) =>
-      `<option value="${i}">${entry.registration} · ${entry.label}</option>`
+      `<option value="${i}">${escapeHtml(entry.registration)} · ${escapeHtml(entry.label)}</option>`
     ).join('');
   }
 
   function populatePositions() {
     positionButtons.innerHTML = Array.from({ length: 8 }, (_, index) => {
       const position = `P${index + 1}`;
-      return `<button type="button" class="position-button ${position === state.position ? 'active' : ''}" data-position="${position}">${position}</button>`;
+      return `<button type="button" class="position-button ${position === state.position ? 'active' : ''}" data-position="${position}" aria-pressed="${position === state.position}">${position}</button>`;
     }).join('');
     positionValue.value = state.position;
   }
 
   function selectPosition(position) {
+    if (!/^P[1-8]$/.test(position)) return;
     state.position = position;
     positionValue.value = position;
     positionButtons.querySelectorAll('.position-button').forEach((button) => {
-      button.classList.toggle('active', button.dataset.position === position);
+      const active = button.dataset.position === position;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
     });
   }
 
@@ -65,8 +74,22 @@
     }).format(date);
   }
 
+  function formatTimeOnly(date) {
+    return new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }).format(date);
+  }
+
+  function formatDateOnly(date) {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric'
+    }).format(date);
+  }
+
   function getSelectedAircraft() {
-    const entry = registrationIndex[Number(aircraftSelect.value) || 0];
+    const index = Number(aircraftSelect.value);
+    const entry = registrationIndex[Number.isInteger(index) && registrationIndex[index] ? index : 0];
+    if (!entry) throw new Error('No aircraft registrations are available.');
     return { entry, aircraft: APP.drill.aircraft[entry.aircraftIndex] };
   }
 
@@ -98,7 +121,7 @@
     $('qnaTitleDay').textContent = String(day).padStart(2, '0');
     $('qnaTopic').textContent = topic;
     $('qnaPages').innerHTML = pageNumbers.map((_, index) => {
-      const path = `assets/qna/day-${String(day).padStart(2, '0')}-page-${index + 1}.webp`;
+      const path = `day-${String(day).padStart(2, '0')}-page-${index + 1}.webp`;
       return `
         <figure class="qna-page">
           <img loading="lazy" src="${path}" alt="Q&A Day ${day}, page ${index + 1}" />
@@ -117,41 +140,60 @@
   }
 
   function saveForm() {
-    localStorage.setItem('cabinDrillForm', JSON.stringify({
-      crewRegistration: $('crewRegistration').value,
+    localStorage.setItem('cabinDrillFormV2', JSON.stringify({
+      flightNumber: $('flightNumber').value,
       aircraftSelect: aircraftSelect.value,
       position: state.position,
       departureDate: $('departureDate').value,
-      departureTime: $('departureTime').value
+      departureTime: $('departureTime').value,
+      arrivalTime: $('arrivalTime').value,
+      pbm: $('pbm').value,
+      salesTarget: $('salesTarget').value
     }));
   }
 
   function restoreForm() {
     try {
-      const saved = JSON.parse(localStorage.getItem('cabinDrillForm') || '{}');
-      if (saved.crewRegistration) $('crewRegistration').value = saved.crewRegistration;
+      const saved = JSON.parse(localStorage.getItem('cabinDrillFormV2') || '{}');
+      if (saved.flightNumber) $('flightNumber').value = saved.flightNumber;
       if (saved.aircraftSelect !== undefined && registrationIndex[Number(saved.aircraftSelect)]) aircraftSelect.value = saved.aircraftSelect;
       if (/^P[1-8]$/.test(saved.position || '')) selectPosition(saved.position);
       if (saved.departureDate) $('departureDate').value = saved.departureDate;
       if (saved.departureTime) $('departureTime').value = saved.departureTime;
+      if (saved.arrivalTime) $('arrivalTime').value = saved.arrivalTime;
+      if (saved.pbm !== undefined) $('pbm').value = saved.pbm;
+      if (saved.salesTarget !== undefined) $('salesTarget').value = saved.salesTarget;
     } catch (_) {}
   }
 
   function renderResult() {
     if (!form.reportValidity()) return;
+
     const { entry, aircraft } = getSelectedAircraft();
     const position = state.position;
     const positionData = aircraft.positions[position];
+    if (!positionData) {
+      alert(`No drill data found for ${position}.`);
+      return;
+    }
+
     const departure = parseLocalDate($('departureDate').value, $('departureTime').value);
     const reporting = new Date(departure.getTime() - 75 * 60 * 1000);
+    const arrival = parseLocalDate($('departureDate').value, $('arrivalTime').value);
+    if (arrival < departure) arrival.setDate(arrival.getDate() + 1);
     const qnaDay = reporting.getDate();
 
     $('resultPosition').textContent = position;
-    $('resultAircraft').textContent = aircraft.ui.label;
+    $('resultAircraft').textContent = aircraft.ui?.label || aircraft.name;
     $('resultRegistration').textContent = entry.registration;
-    $('departureDisplay').textContent = formatDateTime(departure);
-    $('reportingDisplay').textContent = formatDateTime(reporting);
+    $('flightNumberDisplay').textContent = $('flightNumber').value.trim();
+    $('departureDateDisplay').textContent = formatDateOnly(departure);
+    $('departureDisplay').textContent = formatTimeOnly(departure);
+    $('reportingDisplay').textContent = `${formatTimeOnly(reporting)} · ${formatDateOnly(reporting)}`;
+    $('arrivalDisplay').textContent = `${formatTimeOnly(arrival)}${arrival.getDate() !== departure.getDate() ? ' +1' : ''}`;
     $('qaDayDisplay').textContent = String(qnaDay).padStart(2, '0');
+    $('pbmDisplay').textContent = $('pbm').value || '—';
+    $('salesTargetDisplay').textContent = $('salesTarget').value || '—';
 
     $('assignedStationTitle').textContent = position;
     $('attendantStation').textContent = positionData.attendantStation || '—';
@@ -166,9 +208,10 @@
     renderEquipment(positionData.equipmentChecklist || []);
 
     $('seatmapTitle').textContent = entry.registration;
-    $('seatmapImage').src = aircraft.seatConfiguration.image;
+    const seatMapPath = (aircraft.seatConfiguration?.image || '').replace(/^assets\/aircraft\//, '');
+    $('seatmapImage').src = seatMapPath;
     $('seatmapImage').alt = `${entry.registration} seat configuration`;
-    $('seatmapDialogImage').src = aircraft.seatConfiguration.image;
+    $('seatmapDialogImage').src = seatMapPath;
 
     renderQna(qnaDay);
     saveForm();
@@ -187,7 +230,7 @@
   });
 
   $('resetBtn').addEventListener('click', () => {
-    localStorage.removeItem('cabinDrillForm');
+    localStorage.removeItem('cabinDrillFormV2');
     form.reset();
     aircraftSelect.value = '0';
     selectPosition('P2');

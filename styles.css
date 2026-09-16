@@ -295,3 +295,76 @@ input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
   .result-dashboard { grid-template-columns: 1fr 1fr 1fr; }
   .qna-page { break-inside: avoid; box-shadow: none; }
 }
+
+/* v2 flight-entry layout */
+.setup-grid {
+  grid-template-columns: 1.15fr 1.15fr .9fr .9fr 1.35fr;
+  gap: 12px;
+}
+.position-fieldset { grid-column: 1 / span 3; }
+.field-number { align-self: end; }
+.primary-button { grid-column: 1 / -1; min-height: 44px; }
+
+.result-summary {
+  grid-template-columns: 180px 150px 1fr;
+}
+.flight-result-card {
+  min-height: 68px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid #e2e7ec;
+  border-radius: 12px;
+  background: #f7f9fb;
+}
+.flight-result-card span,
+.commercial-strip span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.flight-result-card strong { font-size: 18px; color: var(--blue-dark); }
+.flight-result-card small { color: var(--muted); font-size: 11px; }
+.timing-card { grid-template-columns: .8fr auto 1.35fr .8fr auto; }
+.commercial-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: -2px 0 14px;
+  overflow: hidden;
+}
+.commercial-strip > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fff;
+}
+.commercial-strip > div + div { border-left: 1px solid var(--line); }
+.commercial-strip strong { color: #2e3a46; font-size: 16px; }
+
+@media (max-width: 1000px) {
+  .setup-grid { grid-template-columns: repeat(4, 1fr); }
+  .field-aircraft { grid-column: span 2; }
+  .position-fieldset { grid-column: 1 / -1; }
+  .field-number { grid-column: span 2; }
+  .primary-button { grid-column: 1 / -1; }
+  .result-summary { grid-template-columns: 150px 135px 1fr; }
+  .timing-card { grid-template-columns: 1fr auto 1.4fr; }
+  .timing-card > div:nth-child(4) { grid-column: 1 / 2; }
+  .qa-day-pill { grid-column: 2 / 4; text-align: center; }
+}
+
+@media (max-width: 700px) {
+  .setup-grid { grid-template-columns: 1fr 1fr; }
+  .field-flight, .field-date, .field-time, .field-aircraft, .field-number { grid-column: span 1; }
+  .position-fieldset, .primary-button { grid-column: 1 / -1; }
+  .result-summary { grid-template-columns: 1fr; }
+  .timing-card { grid-template-columns: 1fr auto 1fr; }
+  .timing-card > div:nth-child(4) { grid-column: 1 / 2; }
+  .qa-day-pill { grid-column: 2 / 4; }
+}

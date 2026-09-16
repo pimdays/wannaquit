@@ -13,7 +13,7 @@
       <div>
         <p class="eyebrow">Cabin preparation reference</p>
         <h1>Cabin Crew Drill</h1>
-        <p class="hero-copy">Select your aircraft and position, then enter the scheduled departure. Reporting time is calculated at <strong>75 minutes before departure</strong>, and the Q&amp;A day follows the <strong>reporting date</strong>.</p>
+        <p class="hero-copy">Enter the flight details, aircraft and your position. Reporting time is calculated at <strong>75 minutes before departure</strong>, and the Q&amp;A day follows the <strong>reporting date</strong>.</p>
       </div>
       <div class="hero-badge" aria-label="Designed for iPad Air 4th generation">iPad Air 4 • landscape</div>
     </header>
@@ -28,9 +28,24 @@
       </div>
 
       <form id="drillForm" class="setup-grid">
-        <label class="field">
-          <span>Crew registration</span>
-          <input id="crewRegistration" type="text" inputmode="numeric" placeholder="00001" autocomplete="off" />
+        <label class="field field-flight">
+          <span>Flight number</span>
+          <input id="flightNumber" type="text" placeholder="XJ 600" autocomplete="off" required />
+        </label>
+
+        <label class="field field-date">
+          <span>Departure date</span>
+          <input id="departureDate" type="date" required />
+        </label>
+
+        <label class="field field-time">
+          <span>Departure time</span>
+          <input id="departureTime" type="time" required />
+        </label>
+
+        <label class="field field-time">
+          <span>Arrival time</span>
+          <input id="arrivalTime" type="time" required />
         </label>
 
         <label class="field field-aircraft">
@@ -38,21 +53,21 @@
           <select id="aircraftSelect" required></select>
         </label>
 
-        <label class="field">
-          <span>Departure date</span>
-          <input id="departureDate" type="date" required />
-        </label>
-
-        <label class="field">
-          <span>Departure time</span>
-          <input id="departureTime" type="time" required />
-        </label>
-
         <fieldset class="position-fieldset">
-          <legend>Position</legend>
+          <legend>Crew position</legend>
           <div id="positionButtons" class="position-grid" aria-label="Cabin crew position"></div>
           <input id="positionValue" type="hidden" required />
         </fieldset>
+
+        <label class="field field-number">
+          <span>PBM</span>
+          <input id="pbm" type="number" inputmode="numeric" min="0" step="1" placeholder="0" />
+        </label>
+
+        <label class="field field-number">
+          <span>Sales target</span>
+          <input id="salesTarget" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0" />
+        </label>
 
         <button class="primary-button" type="submit">Show my drill</button>
       </form>
@@ -67,6 +82,12 @@
           <span id="resultRegistration" class="registration-name"></span>
         </div>
 
+        <div class="flight-result-card">
+          <span>Flight</span>
+          <strong id="flightNumberDisplay"></strong>
+          <small id="departureDateDisplay"></small>
+        </div>
+
         <div class="timing-card">
           <div>
             <span>Departure</span>
@@ -77,8 +98,17 @@
             <span>Reporting</span>
             <strong id="reportingDisplay"></strong>
           </div>
+          <div>
+            <span>Arrival</span>
+            <strong id="arrivalDisplay"></strong>
+          </div>
           <div class="qa-day-pill">Q&amp;A Day <strong id="qaDayDisplay"></strong></div>
         </div>
+      </div>
+
+      <div class="commercial-strip panel">
+        <div><span>PBM</span><strong id="pbmDisplay">—</strong></div>
+        <div><span>Sales target</span><strong id="salesTargetDisplay">—</strong></div>
       </div>
 
       <div class="result-dashboard">
@@ -167,7 +197,7 @@
     <img id="seatmapDialogImage" alt="Aircraft seat configuration enlarged" />
   </dialog>
 
-  <script src="assets/data/app-data.js"></script>
+  <script src="app-data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
