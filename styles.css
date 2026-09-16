@@ -368,3 +368,45 @@ input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgb
   .timing-card > div:nth-child(4) { grid-column: 1 / 2; }
   .qa-day-pill { grid-column: 2 / 4; }
 }
+
+
+/* v3 requested simplifications */
+.app-shell { padding-top: 18px; }
+.field-position { align-self: end; }
+.position-input-wrap {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  align-items: center;
+  border: 1px solid #cfd7df;
+  border-radius: 9px;
+  background: #fff;
+  overflow: hidden;
+}
+.position-input-wrap:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(27,117,187,.12);
+}
+.position-prefix {
+  height: 42px;
+  display: grid;
+  place-items: center;
+  background: #f4f7f9;
+  border-right: 1px solid #dce3e8;
+  color: var(--muted);
+  font-weight: 850;
+}
+.position-input-wrap input {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none !important;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 850;
+}
+.time-24h { font-variant-numeric: tabular-nums; letter-spacing: .06em; }
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { appearance: textfield; -moz-appearance: textfield; }
+@media (min-width: 901px) {
+  .setup-grid { grid-template-columns: 1.1fr 1.15fr .9fr .9fr 1.3fr; }
+}

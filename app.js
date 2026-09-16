@@ -8,12 +8,10 @@
   const $ = (id) => document.getElementById(id);
   const form = $('drillForm');
   const aircraftSelect = $('aircraftSelect');
-  const positionButtons = $('positionButtons');
-  const positionValue = $('positionValue');
+  const crewPosition = $('crewPosition');
   const resultSection = $('resultSection');
   const seatmapDialog = $('seatmapDialog');
 
-  const state = { position: 'P2' };
   const registrationIndex = [];
 
   APP.drill.aircraft.forEach((aircraft, aircraftIndex) => {
@@ -33,24 +31,6 @@
     ).join('');
   }
 
-  function populatePositions() {
-    positionButtons.innerHTML = Array.from({ length: 8 }, (_, index) => {
-      const position = `P${index + 1}`;
-      return `<button type="button" class="position-button ${position === state.position ? 'active' : ''}" data-position="${position}" aria-pressed="${position === state.position}">${position}</button>`;
-    }).join('');
-    positionValue.value = state.position;
-  }
-
-  function selectPosition(position) {
-    if (!/^P[1-8]$/.test(position)) return;
-    state.position = position;
-    positionValue.value = position;
-    positionButtons.querySelectorAll('.position-button').forEach((button) => {
-      const active = button.dataset.position === position;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', String(active));
-    });
-  }
 
   function setDefaultDate() {
     if ($('departureDate').value) return;
@@ -61,10 +41,29 @@
     $('departureDate').value = `${y}-${m}-${d}`;
   }
 
+  function normalize24h(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    return digits.length <= 4 ? digits.padStart(4, '0') : digits.slice(0, 4);
+  }
+
+  function parse24hTime(value) {
+    const hhmm = normalize24h(value);
+    if (!/^(?:[01]\d|2[0-3])[0-5]\d$/.test(hhmm) && hhmm !== '2400') {
+      return null;
+    }
+    if (hhmm === '2400') return { hour: 0, minute: 0, dayOffset: 1 };
+    return {
+      hour: Number(hhmm.slice(0, 2)),
+      minute: Number(hhmm.slice(2)),
+      dayOffset: 0
+    };
+  }
+
   function parseLocalDate(dateValue, timeValue) {
     const [year, month, day] = dateValue.split('-').map(Number);
-    const [hour, minute] = timeValue.split(':').map(Number);
-    return new Date(year, month - 1, day, hour, minute, 0, 0);
+    const time = parse24hTime(timeValue);
+    if (!time) return null;
+    return new Date(year, month - 1, day + time.dayOffset, time.hour, time.minute, 0, 0);
   }
 
   function formatDateTime(date) {
@@ -75,9 +74,7 @@
   }
 
   function formatTimeOnly(date) {
-    return new Intl.DateTimeFormat('en-GB', {
-      hour: '2-digit', minute: '2-digit', hour12: false
-    }).format(date);
+    return `${String(date.getHours()).padStart(2, '0')}${String(date.getMinutes()).padStart(2, '0')}`;
   }
 
   function formatDateOnly(date) {
@@ -143,7 +140,7 @@
     localStorage.setItem('cabinDrillFormV2', JSON.stringify({
       flightNumber: $('flightNumber').value,
       aircraftSelect: aircraftSelect.value,
-      position: state.position,
+      crewPosition: crewPosition.value,
       departureDate: $('departureDate').value,
       departureTime: $('departureTime').value,
       arrivalTime: $('arrivalTime').value,
@@ -157,7 +154,7 @@
       const saved = JSON.parse(localStorage.getItem('cabinDrillFormV2') || '{}');
       if (saved.flightNumber) $('flightNumber').value = saved.flightNumber;
       if (saved.aircraftSelect !== undefined && registrationIndex[Number(saved.aircraftSelect)]) aircraftSelect.value = saved.aircraftSelect;
-      if (/^P[1-8]$/.test(saved.position || '')) selectPosition(saved.position);
+      if (/^[1-8]$/.test(saved.crewPosition || '')) crewPosition.value = saved.crewPosition;
       if (saved.departureDate) $('departureDate').value = saved.departureDate;
       if (saved.departureTime) $('departureTime').value = saved.departureTime;
       if (saved.arrivalTime) $('arrivalTime').value = saved.arrivalTime;
@@ -170,7 +167,14 @@
     if (!form.reportValidity()) return;
 
     const { entry, aircraft } = getSelectedAircraft();
-    const position = state.position;
+    const positionNumber = crewPosition.value.trim();
+    if (!/^[1-8]$/.test(positionNumber)) {
+      crewPosition.setCustomValidity('Enter a crew position from 1 to 8.');
+      crewPosition.reportValidity();
+      crewPosition.setCustomValidity('');
+      return;
+    }
+    const position = `P${positionNumber}`;
     const positionData = aircraft.positions[position];
     if (!positionData) {
       alert(`No drill data found for ${position}.`);
@@ -178,8 +182,12 @@
     }
 
     const departure = parseLocalDate($('departureDate').value, $('departureTime').value);
-    const reporting = new Date(departure.getTime() - 75 * 60 * 1000);
     const arrival = parseLocalDate($('departureDate').value, $('arrivalTime').value);
+    if (!departure || !arrival) {
+      alert('Enter departure and arrival times in 24-hour HHMM format, for example 0030 or 1745.');
+      return;
+    }
+    const reporting = new Date(departure.getTime() - 75 * 60 * 1000);
     if (arrival < departure) arrival.setDate(arrival.getDate() + 1);
     const qnaDay = reporting.getDate();
 
@@ -188,9 +196,10 @@
     $('resultRegistration').textContent = entry.registration;
     $('flightNumberDisplay').textContent = $('flightNumber').value.trim();
     $('departureDateDisplay').textContent = formatDateOnly(departure);
-    $('departureDisplay').textContent = formatTimeOnly(departure);
-    $('reportingDisplay').textContent = `${formatTimeOnly(reporting)} · ${formatDateOnly(reporting)}`;
-    $('arrivalDisplay').textContent = `${formatTimeOnly(arrival)}${arrival.getDate() !== departure.getDate() ? ' +1' : ''}`;
+    $('departureDisplay').textContent = `${normalize24h($('departureTime').value)} H`;
+    $('reportingDisplay').textContent = `${formatTimeOnly(reporting)} H · ${formatDateOnly(reporting)}`;
+    const arrivalInput = normalize24h($('arrivalTime').value);
+    $('arrivalDisplay').textContent = `${arrivalInput} H${arrival.getDate() !== departure.getDate() ? ' +1' : ''}`;
     $('qaDayDisplay').textContent = String(qnaDay).padStart(2, '0');
     $('pbmDisplay').textContent = $('pbm').value || '—';
     $('salesTargetDisplay').textContent = $('salesTarget').value || '—';
@@ -204,7 +213,6 @@
     $('cleaningZone').textContent = cleaningZone;
     $('cleaningZoneOverlay').textContent = cleaningZone;
     renderList($('securityAreas'), positionData.securityCheckAreas || []);
-    renderList($('sharedSecurityRules'), aircraft.sharedSecurityCheckRules || []);
     renderEquipment(positionData.equipmentChecklist || []);
 
     $('seatmapTitle').textContent = entry.registration;
@@ -219,9 +227,19 @@
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  positionButtons.addEventListener('click', (event) => {
-    const button = event.target.closest('.position-button');
-    if (button) selectPosition(button.dataset.position);
+
+  crewPosition.addEventListener('input', () => {
+    crewPosition.value = crewPosition.value.replace(/[^1-8]/g, '').slice(0, 1);
+  });
+
+  ['departureTime', 'arrivalTime'].forEach((id) => {
+    $(id).addEventListener('input', (event) => {
+      event.target.value = event.target.value.replace(/\D/g, '').slice(0, 4);
+    });
+  });
+
+  $('pbm').addEventListener('input', (event) => {
+    event.target.value = event.target.value.replace(/\D/g, '');
   });
 
   form.addEventListener('submit', (event) => {
@@ -233,7 +251,7 @@
     localStorage.removeItem('cabinDrillFormV2');
     form.reset();
     aircraftSelect.value = '0';
-    selectPosition('P2');
+    crewPosition.value = '2';
     setDefaultDate();
     resultSection.classList.add('hidden');
   });
@@ -245,7 +263,7 @@
   });
 
   populateAircrafts();
-  populatePositions();
+  if (!crewPosition.value) crewPosition.value = '2';
   setDefaultDate();
   restoreForm();
 })();
