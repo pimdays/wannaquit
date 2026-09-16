@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5f7f9" />
+  <title>Cabin Crew Drill</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Cabin preparation reference</p>
+        <h1>Cabin Crew Drill</h1>
+        <p class="hero-copy">Select your aircraft and position, then enter the scheduled departure. Reporting time is calculated at <strong>75 minutes before departure</strong>, and the Q&amp;A day follows the <strong>reporting date</strong>.</p>
+      </div>
+      <div class="hero-badge" aria-label="Designed for iPad Air 4th generation">iPad Air 4 • landscape</div>
+    </header>
+
+    <section class="panel setup-panel" aria-labelledby="setup-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Step 1</p>
+          <h2 id="setup-title">Flight setup</h2>
+        </div>
+        <button id="resetBtn" class="text-button" type="button">Reset</button>
+      </div>
+
+      <form id="drillForm" class="setup-grid">
+        <label class="field">
+          <span>Crew registration</span>
+          <input id="crewRegistration" type="text" inputmode="numeric" placeholder="00001" autocomplete="off" />
+        </label>
+
+        <label class="field field-aircraft">
+          <span>Aircraft</span>
+          <select id="aircraftSelect" required></select>
+        </label>
+
+        <label class="field">
+          <span>Departure date</span>
+          <input id="departureDate" type="date" required />
+        </label>
+
+        <label class="field">
+          <span>Departure time</span>
+          <input id="departureTime" type="time" required />
+        </label>
+
+        <fieldset class="position-fieldset">
+          <legend>Position</legend>
+          <div id="positionButtons" class="position-grid" aria-label="Cabin crew position"></div>
+          <input id="positionValue" type="hidden" required />
+        </fieldset>
+
+        <button class="primary-button" type="submit">Show my drill</button>
+      </form>
+    </section>
+
+    <section id="resultSection" class="result-section hidden" aria-live="polite">
+      <div class="result-summary panel">
+        <div class="position-identity">
+          <span class="position-overline">Your position</span>
+          <strong id="resultPosition" class="position-number">P2</strong>
+          <span id="resultAircraft" class="aircraft-name"></span>
+          <span id="resultRegistration" class="registration-name"></span>
+        </div>
+
+        <div class="timing-card">
+          <div>
+            <span>Departure</span>
+            <strong id="departureDisplay"></strong>
+          </div>
+          <div class="time-arrow">−75 min</div>
+          <div>
+            <span>Reporting</span>
+            <strong id="reportingDisplay"></strong>
+          </div>
+          <div class="qa-day-pill">Q&amp;A Day <strong id="qaDayDisplay"></strong></div>
+        </div>
+      </div>
+
+      <div class="result-dashboard">
+        <section class="panel details-card">
+          <div class="card-heading">
+            <span class="card-icon">📍</span>
+            <div>
+              <p>Assigned stations</p>
+              <h3 id="assignedStationTitle">P2</h3>
+            </div>
+          </div>
+          <dl class="station-list">
+            <div><dt>Attendant station</dt><dd id="attendantStation"></dd></div>
+            <div><dt>Passenger safety briefing</dt><dd id="briefingStation"></dd></div>
+            <div><dt>Safety equipment station</dt><dd id="equipmentStation"></dd></div>
+          </dl>
+
+          <div class="subsection">
+            <h4>Cleaning zone</h4>
+            <p id="cleaningZone" class="zone-text"></p>
+          </div>
+
+          <div class="subsection">
+            <h4>Security check area</h4>
+            <ul id="securityAreas" class="check-list"></ul>
+          </div>
+        </section>
+
+        <section class="panel seatmap-card">
+          <div class="seatmap-card-header">
+            <div>
+              <p class="section-kicker">Seat configuration</p>
+              <h3 id="seatmapTitle"></h3>
+            </div>
+            <button id="enlargeSeatmap" class="icon-button" type="button" aria-label="Enlarge seat map">↗</button>
+          </div>
+          <div class="seatmap-stage">
+            <img id="seatmapImage" alt="Aircraft seat configuration" />
+            <div class="cleaning-overlay-label">
+              <span>Cleaning zone</span>
+              <strong id="cleaningZoneOverlay"></strong>
+            </div>
+          </div>
+          <p class="seatmap-note">Aircraft cabin arrangement extracted from the drill checklist. The cleaning-zone wording is shown exactly from the supplied Areas of Responsibility chart.</p>
+        </section>
+
+        <section class="panel equipment-card">
+          <div class="card-heading">
+            <span class="card-icon">🧰</span>
+            <div>
+              <p>Safety &amp; emergency</p>
+              <h3>Equipment checklist</h3>
+            </div>
+          </div>
+          <div class="legend-line"><span class="vital-dot"></span> Vital emergency equipment</div>
+          <div id="equipmentChecklist" class="equipment-groups"></div>
+        </section>
+      </div>
+
+      <section class="panel common-security-card">
+        <div class="section-heading compact-heading">
+          <div>
+            <p class="section-kicker">For your assigned area</p>
+            <h2>Security check reminders</h2>
+          </div>
+        </div>
+        <ol id="sharedSecurityRules" class="security-rules"></ol>
+      </section>
+
+      <section id="qnaSection" class="qna-section">
+        <div class="qna-header">
+          <div>
+            <p class="section-kicker">Based on reporting date</p>
+            <h2>Q&amp;A — Day <span id="qnaTitleDay"></span></h2>
+            <p id="qnaTopic" class="qna-topic"></p>
+          </div>
+          <div class="qna-date-note">Reporting date determines the day</div>
+        </div>
+        <div id="qnaPages" class="qna-pages"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="seatmapDialog" class="seatmap-dialog">
+    <button id="closeSeatmap" class="dialog-close" type="button" aria-label="Close">×</button>
+    <img id="seatmapDialogImage" alt="Aircraft seat configuration enlarged" />
+  </dialog>
+
+  <script src="assets/data/app-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
