@@ -54,6 +54,23 @@
       ]
     },
 
+    DEL: {
+      place: 'India',
+      sections: [
+        {
+          label: 'Pax',
+          lines: [
+            'Indian: 50,000 INR Others: 15,000 INR',
+            'All: Alcoholic liquor or wine: 2L',
+            'Cigarettes: 100 nos. or Cigars up to 25 or Tobacco 125 g',
+            '1 laptop',
+            'Indian abroad >1y: Gold Jewelry: Male-20 gms INR 50,000',
+            'Female-40 gms value cap INR 100,000'
+          ]
+        }
+      ]
+    },
+
     ALA: {
       place: 'Kazahkstan',
       sections: [
