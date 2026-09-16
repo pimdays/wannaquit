@@ -10,10 +10,8 @@
   const aircraftSelect = $('aircraftSelect');
   const crewPosition = $('crewPosition');
   const resultSection = $('resultSection');
-  const seatmapDialog = $('seatmapDialog');
 
   const registrationIndex = [];
-
   APP.drill.aircraft.forEach((aircraft, aircraftIndex) => {
     const registrations = aircraft.ui?.registrations || aircraft.registrations || [];
     registrations.forEach((registration) => {
@@ -24,7 +22,6 @@
       });
     });
   });
-
 
   function setDefaultDate() {
     if ($('departureDate').value) return;
@@ -42,9 +39,7 @@
 
   function parse24hTime(value) {
     const hhmm = normalize24h(value);
-    if (!/^(?:[01]\d|2[0-3])[0-5]\d$/.test(hhmm) && hhmm !== '2400') {
-      return null;
-    }
+    if (!/^(?:[01]\d|2[0-3])[0-5]\d$/.test(hhmm) && hhmm !== '2400') return null;
     if (hhmm === '2400') return { hour: 0, minute: 0, dayOffset: 1 };
     return {
       hour: Number(hhmm.slice(0, 2)),
@@ -58,13 +53,6 @@
     const time = parse24hTime(timeValue);
     if (!time) return null;
     return new Date(year, month - 1, day + time.dayOffset, time.hour, time.minute, 0, 0);
-  }
-
-  function formatDateTime(date) {
-    return new Intl.DateTimeFormat('en-GB', {
-      weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit', hour12: false
-    }).format(date);
   }
 
   function formatTimeOnly(date) {
@@ -106,11 +94,30 @@
     }).join('');
   }
 
+  function splitQnaTopic(topic) {
+    const text = String(topic || '');
+    const separator = ' · First Aid: ';
+    const index = text.indexOf(separator);
+    if (index === -1) {
+      return {
+        safety: text.replace(/^Safety:\s*/i, '') || '—',
+        firstAid: '—'
+      };
+    }
+    return {
+      safety: text.slice(0, index).replace(/^Safety:\s*/i, '') || '—',
+      firstAid: text.slice(index + separator.length) || '—'
+    };
+  }
+
   function renderQna(day) {
     const pageNumbers = APP.qna.pages[String(day)] || APP.qna.pages[day] || [];
     const topic = APP.qna.topics[String(day)] || APP.qna.topics[day] || '';
+    const topics = splitQnaTopic(topic);
+
     $('qnaTitleDay').textContent = String(day).padStart(2, '0');
-    $('qnaTopic').textContent = topic;
+    $('qnaSafetyTopic').textContent = topics.safety;
+    $('qnaFirstAidTopic').textContent = topics.firstAid;
     $('qnaPages').innerHTML = pageNumbers.map((_, index) => {
       const path = `day-${String(day).padStart(2, '0')}-page-${index + 1}.webp`;
       return `
@@ -131,13 +138,14 @@
   }
 
   function saveForm() {
-    localStorage.setItem('cabinDrillFormV2', JSON.stringify({
+    localStorage.setItem('cabinDrillFormV3', JSON.stringify({
       flightNumber: $('flightNumber').value,
       aircraftSelect: aircraftSelect.value,
       crewPosition: crewPosition.value,
       departureDate: $('departureDate').value,
       departureTime: $('departureTime').value,
       arrivalTime: $('arrivalTime').value,
+      blockHours: $('blockHours').value,
       pbm: $('pbm').value,
       salesTarget: $('salesTarget').value
     }));
@@ -145,8 +153,8 @@
 
   function restoreForm() {
     try {
-      const saved = JSON.parse(localStorage.getItem('cabinDrillFormV2') || '{}');
-      if (saved.flightNumber) $('flightNumber').value = saved.flightNumber;
+      const saved = JSON.parse(localStorage.getItem('cabinDrillFormV3') || localStorage.getItem('cabinDrillFormV2') || '{}');
+      if (saved.flightNumber) $('flightNumber').value = String(saved.flightNumber).replace(/\D/g, '');
       if (saved.aircraftSelect !== undefined) {
         const savedValue = String(saved.aircraftSelect);
         const byRegistration = registrationIndex.find((item) => item.registration === savedValue);
@@ -158,6 +166,7 @@
       if (saved.departureDate) $('departureDate').value = saved.departureDate;
       if (saved.departureTime) $('departureTime').value = saved.departureTime;
       if (saved.arrivalTime) $('arrivalTime').value = saved.arrivalTime;
+      if (saved.blockHours !== undefined) $('blockHours').value = saved.blockHours;
       if (saved.pbm !== undefined) $('pbm').value = saved.pbm;
       if (saved.salesTarget !== undefined) $('salesTarget').value = saved.salesTarget;
     } catch (_) {}
@@ -174,6 +183,7 @@
       crewPosition.setCustomValidity('');
       return;
     }
+
     const position = `P${positionNumber}`;
     const positionData = aircraft.positions[position];
     if (!positionData) {
@@ -187,39 +197,34 @@
       alert('Enter departure and arrival times in 24-hour HHMM format, for example 0030 or 1745.');
       return;
     }
+
     const reporting = new Date(departure.getTime() - 75 * 60 * 1000);
     if (arrival < departure) arrival.setDate(arrival.getDate() + 1);
     const qnaDay = reporting.getDate();
+    const flightDigits = $('flightNumber').value.replace(/\D/g, '');
 
     $('resultPosition').textContent = position;
     $('resultAircraft').textContent = aircraft.ui?.label || aircraft.name;
     $('resultRegistration').textContent = entry.registration;
-    $('flightNumberDisplay').textContent = $('flightNumber').value.trim();
+    $('flightNumberDisplay').textContent = `XJ${flightDigits}`;
     $('departureDateDisplay').textContent = formatDateOnly(departure);
     $('departureDisplay').textContent = `${normalize24h($('departureTime').value)} H`;
     $('reportingDisplay').textContent = `${formatTimeOnly(reporting)} H · ${formatDateOnly(reporting)}`;
+
     const arrivalInput = normalize24h($('arrivalTime').value);
     $('arrivalDisplay').textContent = `${arrivalInput} H${arrival.getDate() !== departure.getDate() ? ' +1' : ''}`;
+    $('blockHoursDisplay').textContent = $('blockHours').value.trim() || '—';
     $('qaDayDisplay').textContent = String(qnaDay).padStart(2, '0');
     $('pbmDisplay').textContent = $('pbm').value || '—';
     $('salesTargetDisplay').textContent = $('salesTarget').value || '—';
 
     $('assignedStationTitle').textContent = position;
-    $('attendantStation').textContent = positionData.attendantStation || '—';
     $('briefingStation').textContent = positionData.passengerSafetyBriefingStation || '—';
-    $('equipmentStation').textContent = positionData.safetyEmergencyEquipmentCheckStation || '—';
 
     const cleaningZone = positionData.cleaningZone || 'Not available in the supplied cleaning-zone chart.';
     $('cleaningZone').textContent = cleaningZone;
-    $('cleaningZoneOverlay').textContent = cleaningZone;
     renderList($('securityAreas'), positionData.securityCheckAreas || []);
     renderEquipment(positionData.equipmentChecklist || []);
-
-    $('seatmapTitle').textContent = entry.registration;
-    const seatMapPath = (aircraft.seatConfiguration?.image || '').replace(/^assets\/aircraft\//, '');
-    $('seatmapImage').src = seatMapPath;
-    $('seatmapImage').alt = `${entry.registration} seat configuration`;
-    $('seatmapDialogImage').src = seatMapPath;
 
     renderQna(qnaDay);
     saveForm();
@@ -227,6 +232,9 @@
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  $('flightNumber').addEventListener('input', (event) => {
+    event.target.value = event.target.value.replace(/\D/g, '');
+  });
 
   crewPosition.addEventListener('input', () => {
     crewPosition.value = crewPosition.value.replace(/[^1-8]/g, '').slice(0, 1);
@@ -248,18 +256,12 @@
   });
 
   $('resetBtn').addEventListener('click', () => {
-    localStorage.removeItem('cabinDrillFormV2');
+    localStorage.removeItem('cabinDrillFormV3');
     form.reset();
     aircraftSelect.value = registrationIndex[0]?.registration || 'HS-XTC';
     crewPosition.value = '2';
     setDefaultDate();
     resultSection.classList.add('hidden');
-  });
-
-  $('enlargeSeatmap').addEventListener('click', () => seatmapDialog.showModal());
-  $('closeSeatmap').addEventListener('click', () => seatmapDialog.close());
-  seatmapDialog.addEventListener('click', (event) => {
-    if (event.target === seatmapDialog) seatmapDialog.close();
   });
 
   if (!aircraftSelect.value) aircraftSelect.value = registrationIndex[0]?.registration || 'HS-XTC';
