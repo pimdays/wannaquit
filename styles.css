@@ -850,3 +850,56 @@ input[type=number] { appearance: textfield; -moz-appearance: textfield; }
   .ciq-section { grid-template-columns: 1fr; gap: 4px; }
   .ciq-section-label { width: fit-content; }
 }
+
+
+/* v11: compact CIQ under Key equipment locations */
+.ciq-card-embedded {
+  margin: 16px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid #e2e7ec;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.ciq-card-embedded .ciq-header {
+  padding-bottom: 9px;
+}
+
+.ciq-card-embedded .ciq-header h2 {
+  font-size: 17px;
+}
+
+.ciq-card-embedded .ciq-airport-badge {
+  min-width: 58px;
+  padding: 7px 10px;
+  font-size: 16px;
+}
+
+.ciq-card-embedded .ciq-content {
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.ciq-card-embedded .ciq-section {
+  grid-template-columns: 80px 1fr;
+  gap: 9px;
+}
+
+.ciq-card-embedded .ciq-section-label {
+  padding: 7px 8px;
+  font-size: 12px;
+}
+
+.ciq-card-embedded .ciq-lines {
+  gap: 4px;
+  padding: 5px 0;
+  font-size: 12px;
+  line-height: 1.32;
+}
+
+@media (max-width: 640px) {
+  .ciq-card-embedded .ciq-section {
+    grid-template-columns: 1fr;
+  }
+}

@@ -44,9 +44,10 @@
       place: 'Thailand',
       sections: [
         {
-          label: '',
+          label: 'Pax+Crew',
           lines: [
-            'duty free 20,000 THB, Alc 1 L',
+            'duty free 20,000 THB',
+            'Alc 1 L',
             '200 cig, 250g cigars/tobacco'
           ]
         }
@@ -57,7 +58,7 @@
       place: 'Almaty',
       sections: [
         {
-          label: 'Pax',
+          label: 'Pax+Crew',
           lines: [
             'duty free goods ≤ EUR 10,000, <50 kg, Alc 3 L',
             '200 cig, 50 cigars, 250g tobacco',
