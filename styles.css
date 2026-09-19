@@ -933,3 +933,118 @@ input[type=number] { appearance: textfield; -moz-appearance: textfield; }
 @media print {
   .result-actions { display: none !important; }
 }
+
+
+/* v16: automatic flight route + Pax input */
+.setup-grid {
+  grid-template-columns: 1.15fr 1fr .9fr .9fr .9fr;
+}
+
+.field-aircraft {
+  grid-column: 1 / span 2;
+  grid-row: 2;
+}
+
+.field-route {
+  grid-column: 3 / span 2;
+  grid-row: 2;
+}
+
+.field-position {
+  grid-column: 5;
+  grid-row: 2;
+}
+
+.field-pax {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.field-pbm {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.field-sales {
+  grid-column: 3 / span 2;
+  grid-row: 3;
+}
+
+.primary-button {
+  grid-column: 5;
+  grid-row: 3;
+}
+
+.route-preview-input {
+  width: 100%;
+  background: #f7f9fb !important;
+  color: #26475f;
+  font-weight: 900;
+  letter-spacing: .05em;
+  cursor: default;
+}
+
+.pax-input-wrap {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid #d8e0e6;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.pax-prefix {
+  display: grid;
+  place-items: center;
+  min-width: 58px;
+  padding: 0 10px;
+  background: #eef4f8;
+  color: #35556e;
+  font-weight: 900;
+  border-right: 1px solid #d8e0e6;
+}
+
+.pax-input-wrap input {
+  min-width: 0;
+  width: 100%;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.commercial-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1000px) {
+  .field-aircraft,
+  .field-route,
+  .field-position,
+  .field-pax,
+  .field-pbm,
+  .field-sales {
+    grid-column: span 2;
+    grid-row: auto;
+  }
+
+  .primary-button {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .field-aircraft,
+  .field-route,
+  .field-position,
+  .field-pax,
+  .field-pbm,
+  .field-sales,
+  .primary-button {
+    grid-column: 1;
+  }
+
+  .commercial-strip {
+    grid-template-columns: 1fr;
+  }
+}

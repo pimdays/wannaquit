@@ -14,6 +14,45 @@
 
   const TARGET_EQUIPMENT = ['AED', 'EMK', 'MFAK', 'ISB', 'ESB'];
 
+
+  const FLIGHT_ROUTES = {
+    '230': { origin: 'DMK', destination: 'DEL' },
+    '231': { origin: 'DEL', destination: 'DMK' },
+
+    '600': { origin: 'DMK', destination: 'NRT' },
+    '602': { origin: 'DMK', destination: 'NRT' },
+    '606': { origin: 'DMK', destination: 'NRT' },
+    '601': { origin: 'NRT', destination: 'DMK' },
+    '603': { origin: 'NRT', destination: 'DMK' },
+    '607': { origin: 'NRT', destination: 'DMK' },
+
+    '610': { origin: 'DMK', destination: 'KIX' },
+    '612': { origin: 'DMK', destination: 'KIX' },
+    '614': { origin: 'DMK', destination: 'KIX' },
+    '611': { origin: 'KIX', destination: 'DMK' },
+    '613': { origin: 'KIX', destination: 'DMK' },
+    '615': { origin: 'KIX', destination: 'DMK' },
+
+    '620': { origin: 'DMK', destination: 'CTS' },
+    '621': { origin: 'CTS', destination: 'DMK' },
+
+    '638': { origin: 'DMK', destination: 'NGO' },
+    '639': { origin: 'NGO', destination: 'DMK' },
+
+    '864': { origin: 'DMK', destination: 'ALA' },
+    '865': { origin: 'ALA', destination: 'DMK' }
+  };
+
+  function getFlightRoute(flightNumber) {
+    const digits = String(flightNumber || '').replace(/\D/g, '');
+    return FLIGHT_ROUTES[digits] || null;
+  }
+
+  function updateRoutePreview() {
+    const route = getFlightRoute($('flightNumber').value);
+    $('routePreview').value = route ? `${route.origin} → ${route.destination}` : '';
+  }
+
   const CIQ_DATA = {
     NRT: {
       place: 'Japan',
@@ -527,8 +566,7 @@
       departureTime: $('departureTime').value,
       arrivalTime: $('arrivalTime').value,
       blockHours: $('blockHours').value,
-      originAirport: $('originAirport').value,
-      destinationAirport: $('destinationAirport').value,
+      paxCount: $('paxCount').value,
       pbm: $('pbm').value,
       salesTarget: $('salesTarget').value
     }));
@@ -550,10 +588,10 @@
       if (saved.departureTime) $('departureTime').value = saved.departureTime;
       if (saved.arrivalTime) $('arrivalTime').value = saved.arrivalTime;
       if (saved.blockHours !== undefined) $('blockHours').value = saved.blockHours;
-      if (saved.originAirport !== undefined) $('originAirport').value = String(saved.originAirport).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
-      if (saved.destinationAirport !== undefined) $('destinationAirport').value = String(saved.destinationAirport).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+      if (saved.paxCount !== undefined) $('paxCount').value = String(saved.paxCount).replace(/\D/g, '').slice(0, 3);
       if (saved.pbm !== undefined) $('pbm').value = saved.pbm;
       if (saved.salesTarget !== undefined) $('salesTarget').value = saved.salesTarget;
+      updateRoutePreview();
     } catch (_) {}
   }
 
@@ -587,8 +625,16 @@
     if (arrival < departure) arrival.setDate(arrival.getDate() + 1);
     const qnaDay = reporting.getDate();
     const flightDigits = $('flightNumber').value.replace(/\D/g, '');
-    const origin = $('originAirport').value.trim().toUpperCase();
-    const destination = $('destinationAirport').value.trim().toUpperCase();
+    const route = getFlightRoute(flightDigits);
+
+    if (!route) {
+      $('flightNumber').setCustomValidity(`Route for XJ${flightDigits || '___'} is not configured.`);
+      $('flightNumber').reportValidity();
+      $('flightNumber').setCustomValidity('');
+      return;
+    }
+
+    const { origin, destination } = route;
 
     $('resultPosition').textContent = position;
     $('resultAircraft').textContent = aircraft.ui?.label || aircraft.name;
@@ -603,6 +649,7 @@
     $('arrivalDisplay').textContent = `${arrivalInput} H${arrival.getDate() !== departure.getDate() ? ' +1' : ''}`;
     $('blockHoursDisplay').textContent = $('blockHours').value.trim() || '—';
     $('qaDayDisplay').textContent = String(qnaDay).padStart(2, '0');
+    $('paxDisplay').textContent = $('paxCount').value || '—';
     $('pbmDisplay').textContent = $('pbm').value || '—';
     $('salesTargetDisplay').textContent = $('salesTarget').value || '—';
     renderCiq(destination);
@@ -765,6 +812,7 @@
         ['Departure', $('departureDisplay').textContent],
         ['Arrival', $('arrivalDisplay').textContent],
         ['Block Hours', $('blockHoursDisplay').textContent],
+        ['Pax', $('paxDisplay').textContent],
         ['PBM', $('pbmDisplay').textContent],
         ['Sales target', $('salesTargetDisplay').textContent]
       ];
@@ -884,7 +932,9 @@
   });
 
   $('flightNumber').addEventListener('input', (event) => {
-    event.target.value = event.target.value.replace(/\D/g, '');
+    event.target.value = event.target.value.replace(/\D/g, '').slice(0, 3);
+    event.target.setCustomValidity('');
+    updateRoutePreview();
   });
 
   crewPosition.addEventListener('input', () => {
@@ -897,13 +947,8 @@
     });
   });
 
-  ['originAirport', 'destinationAirport'].forEach((id) => {
-    $(id).addEventListener('input', (event) => {
-      event.target.value = event.target.value
-        .toUpperCase()
-        .replace(/[^A-Z]/g, '')
-        .slice(0, 3);
-    });
+  $('paxCount').addEventListener('input', (event) => {
+    event.target.value = event.target.value.replace(/\D/g, '').slice(0, 3);
   });
 
   $('pbm').addEventListener('input', (event) => {
@@ -918,6 +963,7 @@
   $('resetBtn').addEventListener('click', () => {
     localStorage.removeItem('cabinDrillFormV3');
     form.reset();
+    updateRoutePreview();
     aircraftSelect.value = registrationIndex[0]?.registration || 'HS-XTC';
     crewPosition.value = '2';
     setDefaultDate();
@@ -937,4 +983,5 @@
   if (!crewPosition.value) crewPosition.value = '2';
   setDefaultDate();
   restoreForm();
+  updateRoutePreview();
 })();

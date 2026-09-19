@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f5f7f9" />
   <title>Flight Setup</title>
-  <link rel="stylesheet" href="styles.css?v=15" />
+  <link rel="stylesheet" href="styles.css?v=16" />
 </head>
 <body>
   <main class="app-shell">
@@ -23,7 +23,7 @@
           <span>Flight number</span>
           <div class="flight-input-wrap">
             <span class="flight-prefix">XJ</span>
-            <input id="flightNumber" type="text" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required />
+            <input id="flightNumber" type="text" inputmode="numeric" maxlength="3" pattern="[0-9]{3}" autocomplete="off" required />
           </div>
         </label>
 
@@ -71,14 +71,9 @@
           </select>
         </label>
 
-        <label class="field field-origin">
-          <span>Point of origin</span>
-          <input id="originAirport" class="airport-code-input" type="text" maxlength="3" autocomplete="off" required />
-        </label>
-
-        <label class="field field-destination">
-          <span>Destination</span>
-          <input id="destinationAirport" class="airport-code-input" type="text" maxlength="3" autocomplete="off" required />
+        <label class="field field-route">
+          <span>Route</span>
+          <input id="routePreview" class="route-preview-input" type="text" readonly />
         </label>
 
         <label class="field field-position">
@@ -86,6 +81,14 @@
           <div class="position-input-wrap">
             <span class="position-prefix">P</span>
             <input id="crewPosition" type="text" inputmode="numeric" maxlength="1" pattern="[1-8]" autocomplete="off" required />
+          </div>
+        </label>
+
+        <label class="field field-pax">
+          <span>Passengers</span>
+          <div class="pax-input-wrap">
+            <span class="pax-prefix">Pax:</span>
+            <input id="paxCount" type="text" inputmode="numeric" maxlength="3" pattern="[0-9]*" autocomplete="off" />
           </div>
         </label>
 
@@ -145,6 +148,7 @@
       </div>
 
       <div class="commercial-strip panel">
+        <div><span>Pax</span><strong id="paxDisplay">—</strong></div>
         <div><span>PBM</span><strong id="pbmDisplay">—</strong></div>
         <div><span>Sales target</span><strong id="salesTargetDisplay">—</strong></div>
       </div>
@@ -254,6 +258,6 @@
 
   <script src="app-data.js?v=6"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>
