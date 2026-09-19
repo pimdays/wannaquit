@@ -622,6 +622,247 @@
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  function pdfSafe(value) {
+    return String(value ?? '')
+      .replaceAll('→', '->')
+      .replaceAll('≤', '<=')
+      .replaceAll('≥', '>=')
+      .replaceAll('×', 'x')
+      .replaceAll('–', '-')
+      .replaceAll('—', '-')
+      .replaceAll('“', '"')
+      .replaceAll('”', '"')
+      .replaceAll('’', "'")
+      .replaceAll('•', '-');
+  }
+
+  function waitForImage(src) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = src;
+    });
+  }
+
+  async function imageToJpeg(src, maxWidth = 1800, quality = 0.9) {
+    const image = await waitForImage(src);
+    const scale = Math.min(1, maxWidth / image.naturalWidth);
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(image, 0, 0, width, height);
+    return {
+      dataUrl: canvas.toDataURL('image/jpeg', quality),
+      width,
+      height
+    };
+  }
+
+  function collectEquipmentForPdf() {
+    return [...document.querySelectorAll('#equipmentChecklist .equipment-group')].map((group) => {
+      const location = group.querySelector('.equipment-location')?.textContent.trim() || '';
+      const items = [...group.querySelectorAll('.equipment-item')].map((item) => {
+        const codeEl = item.querySelector('.equipment-code');
+        const code = codeEl?.childNodes?.[0]?.textContent?.trim() || codeEl?.textContent?.replace('VITAL', '').trim() || '';
+        const qty = item.querySelector('.equipment-qty')?.textContent.trim() || '';
+        const vital = item.classList.contains('vital') ? ' [VITAL]' : '';
+        return `${code} ${qty}${vital}`.trim();
+      });
+      return { location, items };
+    });
+  }
+
+  function collectKeyEquipmentForPdf() {
+    return [...document.querySelectorAll('#keyEquipmentLocations .key-equipment-item')].map((card) => {
+      const code = card.querySelector('.key-equipment-code')?.textContent.trim() || '';
+      const locations = [...card.querySelectorAll('li')].map((li) => pdfSafe(li.textContent.trim()));
+      return { code, locations };
+    });
+  }
+
+  function collectCiqForPdf() {
+    return [...document.querySelectorAll('#ciqContent .ciq-section')].map((section) => ({
+      label: section.querySelector('.ciq-section-label')?.textContent.trim() || '',
+      lines: [...section.querySelectorAll('.ciq-lines > div')].map((line) => line.textContent.trim())
+    }));
+  }
+
+  async function downloadResultPdf() {
+    if (resultSection.classList.contains('hidden')) return;
+
+    const button = $('downloadPdfBtn');
+    const originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Creating PDF...';
+
+    try {
+      if (!window.jspdf?.jsPDF) {
+        window.print();
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 14;
+      const contentWidth = pageWidth - margin * 2;
+      const bottom = pageHeight - 14;
+      let y = 15;
+
+      const ensureSpace = (needed = 10) => {
+        if (y + needed > bottom) {
+          doc.addPage();
+          y = 15;
+        }
+      };
+
+      const addWrapped = (text, options = {}) => {
+        const size = options.size || 9;
+        const style = options.style || 'normal';
+        const indent = options.indent || 0;
+        const gapAfter = options.gapAfter ?? 1.5;
+        const maxWidth = contentWidth - indent;
+        doc.setFont('helvetica', style);
+        doc.setFontSize(size);
+        const lines = doc.splitTextToSize(pdfSafe(text), maxWidth);
+        const lineHeight = size * 0.45;
+        ensureSpace(lines.length * lineHeight + gapAfter + 1);
+        doc.text(lines, margin + indent, y);
+        y += lines.length * lineHeight + gapAfter;
+      };
+
+      const addSection = (title) => {
+        ensureSpace(10);
+        y += 2;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(pdfSafe(title), margin, y);
+        y += 2;
+        doc.setDrawColor(210, 216, 222);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 5;
+      };
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text('Flight Information', margin, y);
+      y += 8;
+
+      const summaryRows = [
+        ['Flight', $('flightNumberDisplay').textContent],
+        ['Route', $('routeDisplay').textContent],
+        ['Date', $('departureDateDisplay').textContent],
+        ['Aircraft', `${$('resultRegistration').textContent} - ${$('resultAircraft').textContent}`],
+        ['Position', $('resultPosition').textContent],
+        ['Reporting', $('reportingDisplay').textContent],
+        ['Departure', $('departureDisplay').textContent],
+        ['Arrival', $('arrivalDisplay').textContent],
+        ['Block Hours', $('blockHoursDisplay').textContent],
+        ['PBM', $('pbmDisplay').textContent],
+        ['Sales target', $('salesTargetDisplay').textContent]
+      ];
+
+      doc.setFontSize(9);
+      summaryRows.forEach(([label, value]) => {
+        ensureSpace(6);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${pdfSafe(label)}:`, margin, y);
+        doc.setFont('helvetica', 'normal');
+        const wrapped = doc.splitTextToSize(pdfSafe(value || '-'), contentWidth - 35);
+        doc.text(wrapped, margin + 35, y);
+        y += Math.max(5, wrapped.length * 4.2);
+      });
+
+      addSection('Assigned Area');
+      addWrapped(`Passenger safety briefing: ${$('briefingStation').textContent}`);
+      addWrapped(`Cleaning zone: ${$('cleaningZone').textContent}`);
+      addWrapped('Security check area:', { style: 'bold', gapAfter: 0.5 });
+      [...document.querySelectorAll('#securityAreas li')].forEach((li) => addWrapped(`- ${li.textContent.trim()}`, { indent: 4, gapAfter: 0.5 }));
+
+      addSection('Safety & Emergency Equipment Checklist');
+      collectEquipmentForPdf().forEach((group) => {
+        addWrapped(group.location, { style: 'bold', gapAfter: 0.5 });
+        addWrapped(group.items.join('   |   '), { indent: 4, gapAfter: 1.2 });
+      });
+
+      addSection('Key Equipment Locations');
+      collectKeyEquipmentForPdf().forEach((item) => {
+        addWrapped(`${item.code}: ${item.locations.join('; ') || 'Not shown'}`, { gapAfter: 1 });
+      });
+
+      addSection(`${$('ciqTitle').textContent} ${$('ciqAirportBadge').textContent}`.trim());
+      const ciq = collectCiqForPdf();
+      if (!ciq.length) {
+        addWrapped($('ciqContent').textContent.trim() || 'No CIQ information available.');
+      } else {
+        ciq.forEach((section) => {
+          if (section.label) addWrapped(section.label, { style: 'bold', gapAfter: 0.5 });
+          section.lines.forEach((line) => addWrapped(`- ${line}`, { indent: 4, gapAfter: 0.5 }));
+        });
+      }
+
+      addSection(`Q&A - Day ${$('qnaTitleDay').textContent}`);
+      addWrapped(`Safety topic: ${$('qnaSafetyTopic').textContent}`, { style: 'bold' });
+      addWrapped(`First Aid topic: ${$('qnaFirstAidTopic').textContent}`, { style: 'bold' });
+
+      const diagramImage = $('equipmentDiagramImage');
+      if (diagramImage?.getAttribute('src') && !diagramImage.closest('.hidden')) {
+        try {
+          const diagram = await imageToJpeg(diagramImage.getAttribute('src'), 1700, 0.9);
+          doc.addPage();
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(13);
+          doc.text(pdfSafe($('equipmentDiagramTitle').textContent || 'Aircraft Diagram'), margin, 14);
+          const availableW = pageWidth - margin * 2;
+          const availableH = pageHeight - 28;
+          const ratio = Math.min(availableW / diagram.width, availableH / diagram.height);
+          const w = diagram.width * ratio;
+          const h = diagram.height * ratio;
+          doc.addImage(diagram.dataUrl, 'JPEG', (pageWidth - w) / 2, 20, w, h, undefined, 'FAST');
+        } catch (_) {}
+      }
+
+      const qnaImages = [...document.querySelectorAll('#qnaPages img')];
+      for (let i = 0; i < qnaImages.length; i += 1) {
+        const img = qnaImages[i];
+        try {
+          const pageImage = await imageToJpeg(img.getAttribute('src'), 1900, 0.9);
+          doc.addPage();
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(11);
+          doc.text(`Q&A Day ${$('qnaTitleDay').textContent} - Page ${i + 1}`, margin, 12);
+          const availableW = pageWidth - margin * 2;
+          const availableH = pageHeight - 24;
+          const ratio = Math.min(availableW / pageImage.width, availableH / pageImage.height);
+          const w = pageImage.width * ratio;
+          const h = pageImage.height * ratio;
+          doc.addImage(pageImage.dataUrl, 'JPEG', (pageWidth - w) / 2, 17, w, h, undefined, 'FAST');
+        } catch (_) {}
+      }
+
+      const flight = ($('flightNumberDisplay').textContent || 'flight').replace(/[^A-Za-z0-9-]/g, '');
+      const route = ($('routeDisplay').textContent || '').replace(/[^A-Za-z0-9]/g, '-').replace(/-+/g, '-');
+      const position = ($('resultPosition').textContent || '').replace(/[^A-Za-z0-9]/g, '');
+      const filename = [flight, route, position].filter(Boolean).join('_') + '.pdf';
+      doc.save(filename);
+    } catch (error) {
+      console.error(error);
+      alert('Could not create the PDF. Please try again.');
+    } finally {
+      button.disabled = false;
+      button.textContent = originalLabel;
+    }
+  }
+
+  $('downloadPdfBtn').addEventListener('click', downloadResultPdf);
+
   $('departureDate').addEventListener('input', (event) => {
     const digits = event.target.value.replace(/\D/g, '').slice(0, 8);
     let formatted = digits;
