@@ -16,31 +16,31 @@
 
 
   const FLIGHT_ROUTES = {
-    '230': { origin: 'DMK', destination: 'DEL' },
-    '231': { origin: 'DEL', destination: 'DMK' },
+    '230': { origin: 'DMK', destination: 'DEL', salesTarget: 10343 },
+    '231': { origin: 'DEL', destination: 'DMK', salesTarget: 16920 },
 
-    '600': { origin: 'DMK', destination: 'NRT' },
-    '602': { origin: 'DMK', destination: 'NRT' },
-    '606': { origin: 'DMK', destination: 'NRT' },
-    '601': { origin: 'NRT', destination: 'DMK' },
-    '603': { origin: 'NRT', destination: 'DMK' },
-    '607': { origin: 'NRT', destination: 'DMK' },
+    '600': { origin: 'DMK', destination: 'NRT', salesTarget: 7134 },
+    '602': { origin: 'DMK', destination: 'NRT', salesTarget: 7205 },
+    '606': { origin: 'DMK', destination: 'NRT', salesTarget: 18702 },
+    '601': { origin: 'NRT', destination: 'DMK', salesTarget: 13878 },
+    '603': { origin: 'NRT', destination: 'DMK', salesTarget: 12478 },
+    '607': { origin: 'NRT', destination: 'DMK', salesTarget: 11340 },
 
-    '610': { origin: 'DMK', destination: 'KIX' },
-    '612': { origin: 'DMK', destination: 'KIX' },
-    '614': { origin: 'DMK', destination: 'KIX' },
-    '611': { origin: 'KIX', destination: 'DMK' },
-    '613': { origin: 'KIX', destination: 'DMK' },
-    '615': { origin: 'KIX', destination: 'DMK' },
+    '610': { origin: 'DMK', destination: 'KIX', salesTarget: 19468 },
+    '612': { origin: 'DMK', destination: 'KIX', salesTarget: 5207 },
+    '614': { origin: 'DMK', destination: 'KIX', salesTarget: null },
+    '611': { origin: 'KIX', destination: 'DMK', salesTarget: 9890 },
+    '613': { origin: 'KIX', destination: 'DMK', salesTarget: 12878 },
+    '615': { origin: 'KIX', destination: 'DMK', salesTarget: null },
 
-    '620': { origin: 'DMK', destination: 'CTS' },
-    '621': { origin: 'CTS', destination: 'DMK' },
+    '620': { origin: 'DMK', destination: 'CTS', salesTarget: 8870 },
+    '621': { origin: 'CTS', destination: 'DMK', salesTarget: 17599 },
 
-    '638': { origin: 'DMK', destination: 'NGO' },
-    '639': { origin: 'NGO', destination: 'DMK' },
+    '638': { origin: 'DMK', destination: 'NGO', salesTarget: 5086 },
+    '639': { origin: 'NGO', destination: 'DMK', salesTarget: 7987 },
 
-    '864': { origin: 'DMK', destination: 'ALA' },
-    '865': { origin: 'ALA', destination: 'DMK' }
+    '864': { origin: 'DMK', destination: 'ALA', salesTarget: 12810 },
+    '865': { origin: 'ALA', destination: 'DMK', salesTarget: 5719 }
   };
 
   function getFlightRoute(flightNumber) {
@@ -567,8 +567,7 @@
       arrivalTime: $('arrivalTime').value,
       blockHours: $('blockHours').value,
       paxCount: $('paxCount').value,
-      pbm: $('pbm').value,
-      salesTarget: $('salesTarget').value
+      pbm: $('pbm').value
     }));
   }
 
@@ -590,7 +589,6 @@
       if (saved.blockHours !== undefined) $('blockHours').value = saved.blockHours;
       if (saved.paxCount !== undefined) $('paxCount').value = String(saved.paxCount).replace(/\D/g, '').slice(0, 3);
       if (saved.pbm !== undefined) $('pbm').value = saved.pbm;
-      if (saved.salesTarget !== undefined) $('salesTarget').value = saved.salesTarget;
       updateRoutePreview();
     } catch (_) {}
   }
@@ -651,7 +649,8 @@
     $('qaDayDisplay').textContent = String(qnaDay).padStart(2, '0');
     $('paxDisplay').textContent = $('paxCount').value || '—';
     $('pbmDisplay').textContent = $('pbm').value || '—';
-    $('salesTargetDisplay').textContent = $('salesTarget').value || '—';
+    $('salesTargetDisplay').textContent =
+      route.salesTarget == null ? '—' : route.salesTarget.toLocaleString('en-US');
     renderCiq(destination);
 
     $('assignedStationTitle').textContent = position;
