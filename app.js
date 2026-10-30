@@ -68,9 +68,14 @@
       lines: [
         'Correct location',
         'Secure in bracket',
-        'Pressure gauge needle in green band',
-        'Black safety guard intact with seal',
-        'Nozzle unobstructed'
+        'Air Total: pressure gauge needle in green band',
+        'Air Total: black safety guard intact with seal',
+        'Air Total: nozzle unobstructed',
+        'Enterprises: red disc intact',
+        'Enterprises: nozzle unobstructed',
+        'Halon: seal intact and pin inserted',
+        'Halon: pressure gauge needle in green band',
+        'Halon: nozzle unobstructed'
       ]
     },
     PBE: {
