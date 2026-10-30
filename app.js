@@ -15,32 +15,82 @@
   const TARGET_EQUIPMENT = ['AED', 'EMK', 'MFAK', 'ISB', 'ESB'];
 
 
+  // Rev.03 Q&A page overrides (effective 20 Oct 2026).
+  // Only days whose Safety source pages changed are overridden here.
+  const QNA_OVERRIDES = {
+    pages: {
+      '2': [1, 2],
+      '6': [1, 2, 3, 4, 5],
+      '9': [1, 2],
+      '23': [1, 2, 3],
+      '30': [1, 2]
+    },
+    topics: {
+      '6': 'Safety: Carriage of Person with Medical Condition/Illness · First Aid: First Aid Kits (DFAK, MFAK, EMK)',
+      '30': 'Safety: Restraint Kit · First Aid: DRCABD - Defibrillation / Performing Defibrillation'
+    }
+  };
+
+  let currentAircraftForPreflight = null;
+  let preflightPinnedTarget = null;
+
+  const PREFLIGHT_CHECKS = {
+    equipment: {
+      title: 'Safety & Emergency Equipment',
+      lines: [
+        'Perform a pre-flight check.',
+        'Use the equipment location and quantity shown for the selected aircraft and crew position.'
+      ]
+    },
+    lavatory: {
+      title: 'Lavatory pre-flight check',
+      lines: [
+        'Ensure the lavatory fire-extinguisher pressure gauge needle is in the green zone.',
+        'Ensure the lavatory waste-bin flap retracts to the closed position.',
+        'Ensure the lavatory smoke detector is not obstructed or tampered with.',
+        'Security check: under the sink, waste-bin container, drawers, and amenities compartment.'
+      ]
+    },
+    galley: {
+      title: 'Galley pre-flight / security check',
+      lines: [
+        'Security check all galley stowage, including Standard Unit (S/U), Miscellaneous Unit (M/U), and waste bins.',
+        'For service/waste carts in your sector: move the cart back and forth to ensure free movement.',
+        'Apply the brake and confirm the cart does not move.',
+        'Release the brake and confirm there is no brake seizure.',
+        'Tug the cart door to ensure it can be locked and latched.',
+        'Tag a defective cart “UNSERVICEABLE”, withdraw it for repair/replacement, and do not use it for passenger service.'
+      ]
+    }
+  };
+
+
   const FLIGHT_ROUTES = {
-    '230': { origin: 'DMK', destination: 'DEL', salesTarget: 10343 },
-    '231': { origin: 'DEL', destination: 'DMK', salesTarget: 16920 },
+    '230': { origin: 'DMK', destination: 'DEL', salesTarget: 10000 },
+    '231': { origin: 'DEL', destination: 'DMK', salesTarget: 8000 },
 
-    '600': { origin: 'DMK', destination: 'NRT', salesTarget: 7134 },
-    '602': { origin: 'DMK', destination: 'NRT', salesTarget: 7205 },
-    '606': { origin: 'DMK', destination: 'NRT', salesTarget: 18702 },
-    '601': { origin: 'NRT', destination: 'DMK', salesTarget: 13878 },
-    '603': { origin: 'NRT', destination: 'DMK', salesTarget: 12478 },
-    '607': { origin: 'NRT', destination: 'DMK', salesTarget: 11340 },
+    '600': { origin: 'DMK', destination: 'NRT', salesTarget: 6400 },
+    '602': { origin: 'DMK', destination: 'NRT', salesTarget: 6200 },
+    '606': { origin: 'DMK', destination: 'NRT', salesTarget: 19000 },
+    '601': { origin: 'NRT', destination: 'DMK', salesTarget: 14600 },
+    '603': { origin: 'NRT', destination: 'DMK', salesTarget: 12600 },
+    '607': { origin: 'NRT', destination: 'DMK', salesTarget: 12600 },
 
-    '610': { origin: 'DMK', destination: 'KIX', salesTarget: 19468 },
-    '612': { origin: 'DMK', destination: 'KIX', salesTarget: 5207 },
+    '610': { origin: 'DMK', destination: 'KIX', salesTarget: 17000 },
+    '612': { origin: 'DMK', destination: 'KIX', salesTarget: 6800 },
     '614': { origin: 'DMK', destination: 'KIX', salesTarget: null },
-    '611': { origin: 'KIX', destination: 'DMK', salesTarget: 9890 },
-    '613': { origin: 'KIX', destination: 'DMK', salesTarget: 12878 },
+    '611': { origin: 'KIX', destination: 'DMK', salesTarget: 11000 },
+    '613': { origin: 'KIX', destination: 'DMK', salesTarget: 14000 },
     '615': { origin: 'KIX', destination: 'DMK', salesTarget: null },
 
-    '620': { origin: 'DMK', destination: 'CTS', salesTarget: 8870 },
-    '621': { origin: 'CTS', destination: 'DMK', salesTarget: 17599 },
+    '620': { origin: 'DMK', destination: 'CTS', salesTarget: 7500 },
+    '621': { origin: 'CTS', destination: 'DMK', salesTarget: 17800 },
 
-    '638': { origin: 'DMK', destination: 'NGO', salesTarget: 5086 },
-    '639': { origin: 'NGO', destination: 'DMK', salesTarget: 7987 },
+    '638': { origin: 'DMK', destination: 'NGO', salesTarget: 4500 },
+    '639': { origin: 'NGO', destination: 'DMK', salesTarget: 7100 },
 
-    '864': { origin: 'DMK', destination: 'ALA', salesTarget: 12810 },
-    '865': { origin: 'ALA', destination: 'DMK', salesTarget: 5719 }
+    '864': { origin: 'DMK', destination: 'ALA', salesTarget: 9500 },
+    '865': { origin: 'ALA', destination: 'DMK', salesTarget: 4300 }
   };
 
   function getFlightRoute(flightNumber) {
@@ -423,8 +473,20 @@
     return { entry, aircraft: APP.drill.aircraft[entry.aircraftIndex] };
   }
 
-  function renderList(element, items) {
-    element.innerHTML = items.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+  function classifyPreflightArea(label) {
+    const text = String(label || '').toUpperCase();
+    if (text.includes('LAV')) return 'lavatory';
+    if (text.includes('GALLEY')) return 'galley';
+    return 'zone';
+  }
+
+  function renderSecurityAreas(items) {
+    $('securityAreas').innerHTML = items.map((item) => {
+      const type = classifyPreflightArea(item);
+      return `<li class="preflight-target" tabindex="0"
+        data-preflight-type="${type}"
+        data-preflight-label="${escapeHtml(item)}">${escapeHtml(item)}</li>`;
+    }).join('');
   }
 
   function renderEquipment(groups) {
@@ -432,7 +494,11 @@
       const items = group.items.map((equipment) => {
         const vital = equipment.vitalEmergency;
         return `
-          <div class="equipment-item ${vital ? 'vital' : ''}">
+          <div class="equipment-item ${vital ? 'vital' : ''} preflight-target" tabindex="0"
+            data-preflight-type="equipment"
+            data-preflight-label="${escapeHtml(equipment.code)}"
+            data-preflight-location="${escapeHtml(group.location)}"
+            data-preflight-quantity="${escapeHtml(equipment.quantity)}">
             <span class="equipment-code">${escapeHtml(equipment.code)}${vital ? '<span class="vital-tag">VITAL</span>' : ''}</span>
             <span class="equipment-qty">×${equipment.quantity}</span>
           </div>`;
@@ -474,7 +540,11 @@
       const locations = equipment[code] || [];
       const rows = locations.length
         ? locations.map(({ location, quantity }) => `
-            <li>
+            <li class="preflight-target" tabindex="0"
+              data-preflight-type="equipment"
+              data-preflight-label="${escapeHtml(code)}"
+              data-preflight-location="${escapeHtml(location)}"
+              data-preflight-quantity="${escapeHtml(quantity)}">
               <span>${escapeHtml(location)}</span>
               <strong>×${escapeHtml(quantity)}</strong>
             </li>`).join('')
@@ -531,8 +601,9 @@
   }
 
   function renderQna(day) {
-    const pageNumbers = APP.qna.pages[String(day)] || APP.qna.pages[day] || [];
-    const topic = APP.qna.topics[String(day)] || APP.qna.topics[day] || '';
+    const key = String(day);
+    const pageNumbers = QNA_OVERRIDES.pages[key] || APP.qna.pages[key] || APP.qna.pages[day] || [];
+    const topic = QNA_OVERRIDES.topics[key] || APP.qna.topics[key] || APP.qna.topics[day] || '';
     const topics = splitQnaTopic(topic);
 
     $('qnaTitleDay').textContent = String(day).padStart(2, '0');
@@ -656,9 +727,17 @@
     $('assignedStationTitle').textContent = position;
     $('briefingStation').textContent = positionData.passengerSafetyBriefingStation || '—';
 
+    currentAircraftForPreflight = aircraft;
+
     const cleaningZone = positionData.cleaningZone || 'Not available in the supplied cleaning-zone chart.';
     $('cleaningZone').textContent = cleaningZone;
-    renderList($('securityAreas'), positionData.securityCheckAreas || []);
+    $('cleaningZone').classList.add('preflight-target');
+    $('cleaningZone').tabIndex = 0;
+    $('cleaningZone').dataset.preflightType = 'zone';
+    $('cleaningZone').dataset.preflightLabel = 'Assigned zone';
+    $('cleaningZone').dataset.preflightLocation = cleaningZone;
+
+    renderSecurityAreas(positionData.securityCheckAreas || []);
     renderEquipment(positionData.equipmentChecklist || []);
     renderKeyEquipment(aircraft, entry.registration);
 
@@ -666,6 +745,83 @@
     saveForm();
     resultSection.classList.remove('hidden');
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+
+  function getPreflightContent(target) {
+    const type = target.dataset.preflightType || 'zone';
+    const label = target.dataset.preflightLabel || '';
+    const location = target.dataset.preflightLocation || '';
+    const quantity = target.dataset.preflightQuantity || '';
+
+    if (type === 'equipment') {
+      const lines = [...PREFLIGHT_CHECKS.equipment.lines];
+      if (location) lines.push(`Location: ${location}`);
+      if (quantity) lines.push(`Quantity: ${quantity}`);
+      return { title: label ? `${label} - pre-flight check` : PREFLIGHT_CHECKS.equipment.title, lines };
+    }
+
+    if (type === 'lavatory') {
+      return { title: `${label || 'Lavatory'} - pre-flight check`, lines: PREFLIGHT_CHECKS.lavatory.lines };
+    }
+
+    if (type === 'galley') {
+      return { title: `${label || 'Galley'} - pre-flight check`, lines: PREFLIGHT_CHECKS.galley.lines };
+    }
+
+    const rules = currentAircraftForPreflight?.sharedSecurityCheckRules || [];
+    return {
+      title: `${label || 'Assigned area'} - security check`,
+      lines: [
+        'Perform a security check in your assigned area.',
+        ...rules,
+        ...(location && label === 'Assigned zone' ? [`Assigned zone: ${location}`] : [])
+      ]
+    };
+  }
+
+  function positionPreflightPopover(target) {
+    const popover = $('preflightPopover');
+    const rect = target.getBoundingClientRect();
+    const gap = 10;
+    const margin = 12;
+    const width = Math.min(390, window.innerWidth - margin * 2);
+
+    popover.style.width = `${width}px`;
+    popover.style.left = `${margin}px`;
+    popover.style.top = `${margin}px`;
+    popover.classList.remove('hidden');
+
+    const popRect = popover.getBoundingClientRect();
+    let left = rect.left + rect.width / 2 - popRect.width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - popRect.width - margin));
+
+    let top = rect.bottom + gap;
+    if (top + popRect.height > window.innerHeight - margin) {
+      top = rect.top - popRect.height - gap;
+    }
+    top = Math.max(margin, Math.min(top, window.innerHeight - popRect.height - margin));
+
+    popover.style.left = `${left}px`;
+    popover.style.top = `${top}px`;
+  }
+
+  function showPreflightPopover(target, pinned = false) {
+    const popover = $('preflightPopover');
+    const content = getPreflightContent(target);
+    $('preflightPopoverTitle').textContent = content.title;
+    $('preflightPopoverList').innerHTML = content.lines.map((line) => `<li>${escapeHtml(line)}</li>`).join('');
+    popover.dataset.pinned = pinned ? 'true' : 'false';
+    preflightPinnedTarget = pinned ? target : null;
+    positionPreflightPopover(target);
+  }
+
+  function hidePreflightPopover(force = false) {
+    const popover = $('preflightPopover');
+    if (!force && popover.dataset.pinned === 'true') return;
+    popover.classList.add('hidden');
+    popover.dataset.pinned = 'false';
+    preflightPinnedTarget = null;
   }
 
   function pdfSafe(value) {
@@ -952,6 +1108,62 @@
 
   $('pbm').addEventListener('input', (event) => {
     event.target.value = event.target.value.replace(/\D/g, '');
+  });
+
+
+  resultSection.addEventListener('mouseover', (event) => {
+    const target = event.target.closest('.preflight-target');
+    if (target && !preflightPinnedTarget) showPreflightPopover(target, false);
+  });
+
+  resultSection.addEventListener('mouseout', (event) => {
+    const target = event.target.closest('.preflight-target');
+    if (!target || preflightPinnedTarget) return;
+    if (event.relatedTarget && target.contains(event.relatedTarget)) return;
+    hidePreflightPopover();
+  });
+
+  resultSection.addEventListener('focusin', (event) => {
+    const target = event.target.closest('.preflight-target');
+    if (target && !preflightPinnedTarget) showPreflightPopover(target, false);
+  });
+
+  resultSection.addEventListener('focusout', () => {
+    if (!preflightPinnedTarget) hidePreflightPopover();
+  });
+
+  resultSection.addEventListener('click', (event) => {
+    const target = event.target.closest('.preflight-target');
+    if (!target) return;
+    event.stopPropagation();
+
+    if (preflightPinnedTarget === target) {
+      hidePreflightPopover(true);
+      return;
+    }
+
+    showPreflightPopover(target, true);
+  });
+
+  $('closePreflightPopover').addEventListener('click', (event) => {
+    event.stopPropagation();
+    hidePreflightPopover(true);
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!preflightPinnedTarget) return;
+    if ($('preflightPopover').contains(event.target)) return;
+    if (event.target.closest('.preflight-target')) return;
+    hidePreflightPopover(true);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') hidePreflightPopover(true);
+  });
+
+  window.addEventListener('resize', () => {
+    if (preflightPinnedTarget) positionPreflightPopover(preflightPinnedTarget);
+    else hidePreflightPopover(true);
   });
 
   form.addEventListener('submit', (event) => {

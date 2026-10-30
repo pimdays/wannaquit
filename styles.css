@@ -1064,3 +1064,90 @@ input[type=number] { appearance: textfield; -moz-appearance: textfield; }
 @media (max-width: 640px) {
   .field-pbm, .primary-button { grid-column: 1; }
 }
+
+
+/* v19 - contextual pre-flight checks */
+.preflight-target {
+  cursor: help;
+  transition: box-shadow .15s ease, transform .15s ease, background-color .15s ease;
+}
+
+.preflight-target:hover,
+.preflight-target:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(28, 133, 192, .22);
+}
+
+.check-list .preflight-target {
+  border-radius: 7px;
+  padding: 4px 6px;
+  margin-left: -6px;
+}
+
+.key-equipment-item li.preflight-target {
+  border-radius: 7px;
+}
+
+.preflight-popover {
+  position: fixed;
+  z-index: 9999;
+  max-height: min(70vh, 520px);
+  overflow: auto;
+  padding: 16px 18px 16px;
+  border: 1px solid #d8e1e8;
+  border-radius: 14px;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 16px 44px rgba(20, 46, 66, .22);
+  color: #243440;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.preflight-popover.hidden {
+  display: none !important;
+}
+
+.preflight-popover-kicker {
+  margin: 0 34px 3px 0;
+  color: #167cb5;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.preflight-popover h3 {
+  margin: 0 34px 10px 0;
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.preflight-popover ul {
+  margin: 0;
+  padding-left: 19px;
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.preflight-popover-close {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: #eef3f7;
+  color: #415563;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (hover: none) {
+  .preflight-target:hover {
+    box-shadow: none;
+  }
+}
