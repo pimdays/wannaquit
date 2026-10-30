@@ -37,10 +37,7 @@
   const PREFLIGHT_CHECKS = {
     equipment: {
       title: 'Safety & Emergency Equipment',
-      lines: [
-        'Perform a pre-flight check.',
-        'Use the equipment location and quantity shown for the selected aircraft and crew position.'
-      ]
+      lines: ['Perform a pre-flight check.']
     },
     lavatory: {
       title: 'Lavatory pre-flight check',
@@ -62,6 +59,136 @@
         'Tag a defective cart “UNSERVICEABLE”, withdraw it for repair/replacement, and do not use it for passenger service.'
       ]
     }
+  };
+
+
+  const EQUIPMENT_PREFLIGHT = {
+    FE: {
+      title: 'FE - Fire Extinguisher',
+      lines: [
+        'Correct location',
+        'Secure in bracket',
+        'Pressure gauge needle in green band',
+        'Black safety guard intact with seal',
+        'Nozzle unobstructed'
+      ]
+    },
+    PBE: {
+      title: 'PBE',
+      lines: [
+        'Correct location',
+        'Secure in stowage',
+        'AVOX: humidity indicator not pink',
+        'Air Liquide: green service indicator visible on the container',
+        'Air Liquide: seal not broken',
+        'Oxycrew: seal intact',
+        'Oxycrew: yellow serviceability indicator visible through window'
+      ]
+    },
+    O2: {
+      title: 'O2 - Portable Oxygen Bottle',
+      lines: [
+        'Correct location',
+        'Secure in bracket',
+        'Single outlet: pressure gauge needle pointing within or above the green band',
+        'Single outlet: mask in pouch and attached to the outlet',
+        'Dual outlet: pressure gauge needle pointing above 1500 PSI',
+        'Dual outlet: mask attached to the HI Flow outlet'
+      ]
+    },
+    ELT: {
+      title: 'ELT - Transmitter',
+      lines: [
+        'Correct location',
+        'Available in stowage / secure in bracket as applicable'
+      ]
+    },
+    M: {
+      title: 'M - Megaphone',
+      lines: [
+        'Correct location',
+        'Secure in bracket',
+        'Press “Push-to-talk” button to test batteries - listen for clicking sound'
+      ]
+    },
+    F: {
+      title: 'F - Flashlight',
+      lines: [
+        'Correct location',
+        'Secure in bracket',
+        'LED Type A: red LED light flashes every 3-7 seconds',
+        'LED Type B: press Push-to-Test button - LED indicator flashes green',
+        'LED Type B: tamper shield in place'
+      ]
+    },
+    ILV: {
+      title: 'ILV - Infant Life Vest',
+      lines: ['Correct location', 'Correct quantity']
+    },
+    AED: {
+      title: 'AED - Automated External Defibrillator',
+      lines: [
+        'Correct location',
+        'Green status indicator flashes every 5 seconds',
+        'Accessories kit is available'
+      ]
+    },
+    MFAK: {
+      title: 'MFAK - Mandatory First Aid Kit',
+      lines: ['Correct location', 'Secure in stowage', 'Seal intact', 'Valid expiry date']
+    },
+    EMK: {
+      title: 'EMK - Emergency Medical Kit',
+      lines: ['Correct location', 'Secure in stowage', 'Seal intact', 'Valid expiry date']
+    },
+    DFAK: {
+      title: 'DFAK - Daily First Aid Kit',
+      lines: ['Correct location', 'Correct quantity']
+    },
+    UPK: {
+      title: 'UPK - Universal Precaution Kit',
+      lines: ['Correct location', 'Secure in stowage', 'Seal intact', 'Valid expiry date']
+    },
+    X: {
+      title: 'X - Crash Axe',
+      lines: ['Correct location', 'Secure in stowage']
+    },
+    G: {
+      title: 'G - Protective Gloves',
+      lines: ['Correct location', 'Correct quantity']
+    },
+    ISB: {
+      title: 'ISB - Infant Seatbelt',
+      lines: ['Correct location', 'Correct quantity']
+    },
+    ESB: {
+      title: 'ESB - Extension Seatbelt',
+      lines: ['Correct location', 'Correct quantity']
+    },
+    MRT: {
+      title: 'MRT - Manual Release Tool',
+      lines: ['Correct location and quantity']
+    },
+    ESK: {
+      title: 'ESK - External Survival Kit',
+      lines: ['Correct location', 'Secure in stowage', 'Seal intact']
+    },
+    BLR: {
+      title: 'BLR - Baby Life Raft',
+      lines: ['Correct location', 'Correct quantity']
+    },
+    CLV: {
+      title: 'CLV - Crew Life Vest',
+      lines: [
+        'Perform a pre-flight check',
+        'Ensure the crew life vest is the correct type according to the passenger safety information card'
+      ]
+    },
+    DEMO: { title: 'DEMO - Demo Kit', lines: ['Perform a pre-flight check'] },
+    RT: { title: 'RT', lines: ['Perform a pre-flight check'] },
+    SLV: { title: 'SLV', lines: ['Perform a pre-flight check'] },
+    SSB: { title: 'SSB', lines: ['Perform a pre-flight check'] },
+    'SPARE KIT': { title: 'SPARE KIT', lines: ['Perform a pre-flight check'] }
   };
 
 
@@ -511,24 +638,97 @@
     }).join('');
   }
 
-  function collectFallbackEquipmentLocations(aircraft) {
-    const result = Object.fromEntries(TARGET_EQUIPMENT.map((code) => [code, []]));
-    const locationMaps = Object.fromEntries(TARGET_EQUIPMENT.map((code) => [code, new Map()]));
+  function normalizeEquipmentLocation(value) {
+    return String(value || '')
+      .toUpperCase()
+      .replace(/\bDOOR\s*/g, 'D')
+      .replace(/\bROW\s*/g, '')
+      .replace(/\bDOG\s*HOUSE\b/g, 'DOGHOUSE')
+      .replace(/[^A-Z0-9]/g, '');
+  }
 
-    Object.values(aircraft.positions || {}).forEach((positionData) => {
+  function collectEquipmentAssignments(aircraft) {
+    const result = Object.fromEntries(TARGET_EQUIPMENT.map((code) => [code, []]));
+
+    Object.entries(aircraft.positions || {}).forEach(([position, positionData]) => {
       (positionData.equipmentChecklist || []).forEach((group) => {
         (group.items || []).forEach((equipment) => {
+          if (equipment.code === 'SPARE KIT') {
+            result.ESB.push({
+              location: group.location,
+              quantity: 2 * Number(equipment.quantity || 0),
+              position
+            });
+            return;
+          }
+
           if (!TARGET_EQUIPMENT.includes(equipment.code)) return;
-          const map = locationMaps[equipment.code];
-          map.set(group.location, (map.get(group.location) || 0) + Number(equipment.quantity || 0));
+
+          result[equipment.code].push({
+            location: group.location,
+            quantity: Number(equipment.quantity || 0),
+            position
+          });
         });
       });
     });
 
-    TARGET_EQUIPMENT.forEach((code) => {
-      result[code] = [...locationMaps[code].entries()].map(([location, quantity]) => ({ location, quantity }));
-    });
     return result;
+  }
+
+  function collectFallbackEquipmentLocations(aircraft) {
+    const assignments = collectEquipmentAssignments(aircraft);
+    const result = {};
+
+    TARGET_EQUIPMENT.forEach((code) => {
+      const byLocation = new Map();
+
+      (assignments[code] || []).forEach(({ location, quantity, position }) => {
+        if (!byLocation.has(location)) {
+          byLocation.set(location, { location, quantity: 0, positions: [] });
+        }
+        const item = byLocation.get(location);
+        item.quantity += quantity;
+        if (!item.positions.includes(position)) item.positions.push(position);
+      });
+
+      result[code] = [...byLocation.values()];
+    });
+
+    return result;
+  }
+
+  function findEquipmentOwner(aircraft, code, referenceLocation) {
+    const assignments = collectEquipmentAssignments(aircraft)[code] || [];
+    if (!assignments.length) return '';
+
+    const ref = normalizeEquipmentLocation(referenceLocation);
+    const scored = assignments.map((assignment) => {
+      const loc = normalizeEquipmentLocation(assignment.location);
+      let score = 0;
+
+      if (loc === ref) score = 100;
+      else if (loc.includes(ref) || ref.includes(loc)) score = 80;
+      else {
+        const refTokens = new Set(
+          String(referenceLocation || '').toUpperCase().match(/[A-Z]+\d*[A-Z]*|\d+[A-Z]+/g) || []
+        );
+        const locTokens = new Set(
+          String(assignment.location || '').toUpperCase().match(/[A-Z]+\d*[A-Z]*|\d+[A-Z]+/g) || []
+        );
+        let overlap = 0;
+        refTokens.forEach((token) => {
+          if (locTokens.has(token)) overlap += 1;
+        });
+        score = overlap * 10;
+      }
+
+      return { ...assignment, score };
+    }).sort((a, b) => b.score - a.score);
+
+    if (scored[0]?.score > 0) return scored[0].position;
+    if (assignments.length === 1) return assignments[0].position;
+    return '';
   }
 
   function renderKeyEquipment(aircraft, registration) {
@@ -539,15 +739,19 @@
     $('keyEquipmentLocations').innerHTML = TARGET_EQUIPMENT.map((code) => {
       const locations = equipment[code] || [];
       const rows = locations.length
-        ? locations.map(({ location, quantity }) => `
+        ? locations.map(({ location, quantity, positions }) => {
+            const owner = positions?.join('/') || findEquipmentOwner(aircraft, code, location);
+            return `
             <li class="preflight-target" tabindex="0"
               data-preflight-type="equipment"
-              data-preflight-label="${escapeHtml(code)}"
-              data-preflight-location="${escapeHtml(location)}"
-              data-preflight-quantity="${escapeHtml(quantity)}">
-              <span>${escapeHtml(location)}</span>
-              <strong>×${escapeHtml(quantity)}</strong>
-            </li>`).join('')
+              data-preflight-label="${escapeHtml(code)}">
+              <span class="key-equipment-location">${escapeHtml(location)}</span>
+              <span class="key-equipment-meta">
+                ${owner ? `<b class="key-owner">${escapeHtml(owner)}</b>` : ''}
+                <strong>×${escapeHtml(quantity)}</strong>
+              </span>
+            </li>`;
+          }).join('')
         : '<li class="no-location">Not shown in the available source.</li>';
 
       return `
@@ -752,13 +956,13 @@
     const type = target.dataset.preflightType || 'zone';
     const label = target.dataset.preflightLabel || '';
     const location = target.dataset.preflightLocation || '';
-    const quantity = target.dataset.preflightQuantity || '';
 
     if (type === 'equipment') {
-      const lines = [...PREFLIGHT_CHECKS.equipment.lines];
-      if (location) lines.push(`Location: ${location}`);
-      if (quantity) lines.push(`Quantity: ${quantity}`);
-      return { title: label ? `${label} - pre-flight check` : PREFLIGHT_CHECKS.equipment.title, lines };
+      const equipmentCheck = EQUIPMENT_PREFLIGHT[label] || PREFLIGHT_CHECKS.equipment;
+      return {
+        title: equipmentCheck.title || `${label || 'Equipment'} - pre-flight check`,
+        lines: equipmentCheck.lines || PREFLIGHT_CHECKS.equipment.lines
+      };
     }
 
     if (type === 'lavatory') {
