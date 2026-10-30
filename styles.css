@@ -1151,3 +1151,45 @@ input[type=number] { appearance: textfield; -moz-appearance: textfield; }
     box-shadow: none;
   }
 }
+
+
+/* v20 - equipment-specific pre-flight checks + responsible P-position */
+.key-equipment-location {
+  min-width: 0;
+}
+
+.key-equipment-meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.key-owner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  min-height: 24px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e7f2f9;
+  color: #156d9d;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .03em;
+}
+
+.key-equipment-item li {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.preflight-popover ul {
+  padding-left: 22px;
+}
+
+.preflight-popover li::marker {
+  color: #167cb5;
+  font-weight: 900;
+}
